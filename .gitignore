@@ -5,6 +5,7 @@
 
 # Custom
 
+toolchain-mingw.cmake
 vcpkg-configuration.json
 CMakePresets.json
 build/
@@ -12,6 +13,7 @@ lib/
 vcpkg_installed/
 .vscode/
 out/
+glad/
 
 # User-specific files
 *.rsuser
