@@ -1,23 +1,30 @@
 #pragma once
 
+#include "IDevice.hpp"
 #include <cstdint>
 
 namespace gfx 
 {
 
 struct Buffer;
+struct VertexLayout;
 
 struct Mesh
 {
-    virtual void updateVertexBuffer   (const void* vertices, uint64_t size)  = 0;
-    virtual void updateIndexBuffer    (const void* indices, uint64_t size)   = 0;
-    virtual void updateInstanceBuffer (const void* instances, uint64_t size) = 0;
+    virtual void draw() = 0;
+    
+    virtual void updateVertices(const void* data, uint64_t count) = 0;
 
-    virtual const Buffer* getVertexBuffer() const   = 0;
-    virtual const Buffer* getIndexBuffer() const    = 0;
-    virtual const Buffer* getInstanceBuffer() const = 0;
+    virtual Buffer* getVertexBuffer()   = 0;
+    virtual Buffer* getIndexBuffer()    = 0;
+    virtual Buffer* getInstanceBuffer() = 0;
 
     virtual ~Mesh() = default;
+};
+
+struct MeshDesc
+{
+    VertexLayout& layout;
 };
 
 }

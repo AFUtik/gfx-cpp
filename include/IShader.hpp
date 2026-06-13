@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 
+#include "Handle.hpp"
+
 namespace gfx 
 {
 
@@ -20,11 +22,18 @@ enum class ShaderStage
 
 struct Shader
 {
-    ShaderStage stage;
-    std::string path;
 
-    virtual void Compile() = 0;
 };
+
+struct ShaderDesc
+{
+    ShaderStage stage;
+    std::string openglShader = "";
+    std::string vulkanShader = "";
+
+    virtual Handle<Shader> compile() = 0;
+};
+
 
 struct ResourceSlot
 {

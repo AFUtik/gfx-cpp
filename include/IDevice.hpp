@@ -1,11 +1,37 @@
+#pragma once
+
 #include <cstdint>
+
+#include "Handle.hpp"
 
 namespace gfx 
 {
 
+struct Shader;
+struct Buffer;
+struct Mesh;
+struct Image;
+
+struct PipelineDesc;
+struct PipelineState;
+
+struct ShaderDesc;
+struct BufferDesc;
+struct MeshDesc;
+struct ImageDesc;
+
 struct Device
 {
+    virtual Handle<Image>         createImage (ImageDesc& desc)  = 0;
+    virtual Handle<Buffer>        createBuffer(const BufferDesc& desc) = 0;
+    virtual Handle<Mesh>          createMesh  (const MeshDesc& desc)   = 0;
 
+    virtual Handle<ShaderDesc>    createShaderDesc() = 0;
+
+    virtual Handle<PipelineState> createPipelineState() = 0;
+    virtual Handle<PipelineDesc>  createPipelineDesc()  = 0;
+
+    virtual ~Device() = default;
 };
 
 }

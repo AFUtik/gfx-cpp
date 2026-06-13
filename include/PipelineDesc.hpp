@@ -7,31 +7,31 @@ namespace gfx
 
 struct Pipeline;
 
-struct PipelineDescriptor
+struct PipelineDesc
 {
-    inline PipelineDescriptor& addShader(Handle<Shader>& shader)
+    inline PipelineDesc& addShader(Handle<Shader>& shader)
     {
         shaders.push_back(shader);
         return *this;
     }
 
-    inline PipelineDescriptor& setShaderResourceSignature(Handle<ShaderResourceSignature>& signature)
+    inline PipelineDesc& setShaderResourceSignature(Handle<ShaderResourceSignature>& signature)
     {
         resourceSignature = signature;
         return *this;
     }
 
-    inline PipelineDescriptor& setPipelineState(Handle<PipelineState>& state)
+    inline PipelineDesc& setPipelineState(Handle<PipelineState>& state)
     {
         pipelineState = state;
         return *this;
     }
     
-    virtual Handle<Pipeline> Build() = 0;
+    virtual Handle<Pipeline> build() = 0;
 protected:
     Handle<ShaderResourceSignature> resourceSignature;
     Handle<PipelineState>           pipelineState;
-    
+
     std::vector<Handle<Shader>>     shaders;
 };
 

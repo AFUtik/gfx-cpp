@@ -1,21 +1,25 @@
 #pragma once
 
 #include "IBuffer.hpp"
-#include "GLTypes.hpp"
 
 namespace gfx::gl
 {
 
-struct BufferGL : Buffer
+class BufferGL : public Buffer
 {
-    BufferGL(const Buffer&) = delete;
-    BufferGL& operator=(const Buffer&) = delete;
+public:
+    BufferGL(const BufferDesc& desc);
+    ~BufferGL();
 
-    void writeToBuffer     (glt::data data, glt::size size, glt::size offset = 0) override;
-    glt::size getBufferSize() const override;
+    void write(const void* data, uint64_t size, uint64_t offset) override;
+    void* map()   override;
+    void  unmap() override;
+
+    uint64_t getSize() const override {return size;};
 private:
-    glt::Buffer buffer;
-    glt::size   size; // In bytes
+    uint32_t buffer = 0;
+    uint64_t target = 0;
+    uint64_t size   = 0;
 };
 
 }
