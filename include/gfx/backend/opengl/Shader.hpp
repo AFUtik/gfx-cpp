@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IShader.hpp"
+#include "gfx/IShader.hpp"
 
 namespace gfx::gl
 {

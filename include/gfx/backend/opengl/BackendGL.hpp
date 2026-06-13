@@ -1,8 +1,7 @@
 #pragma once
 
-#include "ResourceManager.hpp"
-
-#include "IDevice.hpp"
+#include "gfx/ResourceManager.hpp"
+#include "gfx/IDevice.hpp"
 
 #include "Buffer.hpp"
 #include "Mesh.hpp"

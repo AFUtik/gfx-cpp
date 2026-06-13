@@ -40,11 +40,13 @@ struct VertexLayout
 struct Vertex
 {
     glm::vec3 pos;
+    glm::vec3 color;
 
     inline constexpr static VertexLayout getLayout()
     {
         return VertexLayout{
-            {{0, 0, VertexFormat::Float3, offsetof(Vertex, pos)},},
+            {{0, 0, VertexFormat::Float3, offsetof(Vertex, pos)},
+            {1, 0, VertexFormat::Float3, offsetof(Vertex, color)}},
             sizeof(Vertex)
         };
     }

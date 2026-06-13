@@ -1,5 +1,5 @@
-#include "Backend.hpp"
-#include "backend/opengl/BackendGL.hpp"
+#include "gfx/Backend.hpp"
+#include "gfx/backend/opengl/BackendGL.hpp"
 
 namespace gfx
 {

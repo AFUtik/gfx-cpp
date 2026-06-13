@@ -1,5 +1,5 @@
-#include "backend/opengl/Buffer.hpp"
-#include "backend/opengl/Map.hpp"
+#include "gfx/backend/opengl/Buffer.hpp"
+#include "gfx/backend/opengl/Map.hpp"
 
 #include <glad/glad.h>
 

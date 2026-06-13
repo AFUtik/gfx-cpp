@@ -1,7 +1,7 @@
 #pragma once
 
-#include "PipelineDesc.hpp"
-#include "IPipeline.hpp"
+#include "gfx/PipelineDesc.hpp"
+#include "gfx/IPipeline.hpp"
 
 namespace gfx::gl 
 {

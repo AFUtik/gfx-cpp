@@ -1,19 +1,24 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Backend.hpp"
-#include "Handle.hpp"
-#include "IMesh.hpp"
-#include "Vertex.hpp"
+#include "gfx/Backend.hpp"
+#include "gfx/Handle.hpp"
+#include "gfx/IMesh.hpp"
+#include "gfx/Vertex.hpp"
 
 #include <iostream>
 
 // Vertex Shader
 const char* vertexShaderSrc = R"(
 #version 330 core
+
 layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aColor;
+
+out vec3 f_color;
 
 void main() {
+    f_color = aColor;
     gl_Position = vec4(aPos, 1.0);
 }
 )";
@@ -21,12 +26,20 @@ void main() {
 // Fragment Shader
 const char* fragmentShaderSrc = R"(
 #version 330 core
+
+in vec3 f_color;
+
 out vec4 FragColor;
 
 void main() {
-    FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+    FragColor = vec4(f_color, 1.0);
 }
 )";
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
 
 int main() {
     auto device = gfx::createOpenGLBackend();
@@ -41,17 +54,26 @@ int main() {
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    // vertices
-    float vertices[] = {
-         0.0f,  0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f
+    glViewport(0, 0, 800, 600);
+
+    glfwSetFramebufferSizeCallback(
+        window,
+        [](GLFWwindow*, int width, int height)
+        {
+            glViewport(0, 0, width, height);
+        }
+    );
+    
+    std::vector<gfx::Vertex> vertices = {
+        gfx::Vertex{{0.0f,  0.5f, 0.0f}, {1.0f, 0.0, 0.0}},
+        gfx::Vertex{{-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0}},
+        gfx::Vertex{{0.5f, -0.5f, 0.0f}, {0.0f, 0.0, 1.0f}},
     };
 
     gfx::VertexLayout layout = gfx::Vertex::getLayout();
 
     gfx::Handle<gfx::Mesh> mesh = device->createMesh(gfx::MeshDesc{.layout = layout});
-    mesh->updateVertices(vertices, 3);
+    mesh->updateVertices(vertices.data(), 3);
 
     // compile vertex shader
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -79,7 +101,7 @@ int main() {
         glUseProgram(shaderProgram);
         
         // DRAW
-        //mesh->draw();
+        mesh->draw();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

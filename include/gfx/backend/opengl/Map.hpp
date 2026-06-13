@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IBuffer.hpp"
+#include "gfx/IBuffer.hpp"
 
 #include <cstdint>
 

@@ -1,9 +1,9 @@
-#include "IMesh.hpp"
-#include "Vertex.hpp"
+#include "gfx/IMesh.hpp"
+#include "gfx/Vertex.hpp"
 
-#include "backend/opengl/BackendGL.hpp"
-#include "backend/opengl/Buffer.hpp"
-#include "backend/opengl/Mesh.hpp"
+#include "gfx/backend/opengl/BackendGL.hpp"
+#include "gfx/backend/opengl/Buffer.hpp"
+#include "gfx/backend/opengl/Mesh.hpp"
 
 #include <glad/glad.h>
 
@@ -15,14 +15,6 @@ MeshGL::MeshGL(BackendGL& device, const MeshDesc& desc) : device(device), layout
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    gfx::BufferDesc bufferDesc
-    {
-        .type   = gfx::BufferType::Vertex,
-        .usage  = gfx::BufferUsage::Static,
-        .access = gfx::BufferAccess::GPUOnly,
-        .size   = 255, // EXP
-        .cpuVisible = false
-    };
     vbo = device.createBuffer(
         BufferDesc{
             .type   = gfx::BufferType::Vertex,

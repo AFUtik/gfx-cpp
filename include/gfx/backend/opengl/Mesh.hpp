@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Handle.hpp"
-#include "IMesh.hpp"
-#include "Vertex.hpp"
+#include "gfx/Handle.hpp"
+#include "gfx/IMesh.hpp"
+#include "gfx/Vertex.hpp"
 
 namespace gfx 
 {
