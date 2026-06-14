@@ -5,6 +5,17 @@
 namespace gfx::gl 
 {
 
+uint32_t toGLUnsignedType(uint64_t size)
+{
+    switch (size) 
+    {
+        case 1: return GL_UNSIGNED_BYTE;
+        case 2: return GL_UNSIGNED_SHORT;
+        case 4: return GL_UNSIGNED_INT;
+        default: return 0;
+    }
+}
+
 uint32_t toGLBufferType(BufferType type)
 {
     switch (type)

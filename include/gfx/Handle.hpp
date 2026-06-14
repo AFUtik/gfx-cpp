@@ -98,7 +98,13 @@ struct Handle {
     explicit operator bool() const { return IsValid(); }
 
     template<typename C>
-    Handle<C> Cast() const { return Handle<C>(*this); }
+    Handle<C> Cast() const
+    {
+        Handle<C> result;
+        result.block_ = block_;
+        if (result.block_) result.block_->refCount.fetch_add(1, std::memory_order_relaxed);
+        return result;
+    }
     
     T* Get() const
     {

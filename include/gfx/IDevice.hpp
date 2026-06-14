@@ -22,9 +22,11 @@ struct ImageDesc;
 
 struct Device
 {
-    virtual Handle<Image>         createImage (ImageDesc& desc)  = 0;
+    virtual Handle<Image>         createImage (const ImageDesc& desc)  = 0;
     virtual Handle<Buffer>        createBuffer(const BufferDesc& desc) = 0;
-    virtual Handle<Mesh>          createMesh  (const MeshDesc& desc)   = 0;
+
+    virtual Handle<MeshDesc>      meshDescHandle(const MeshDesc& desc)   = 0;
+    virtual Handle<Mesh>          createMesh    (Handle<MeshDesc>& desc) = 0;
 
     virtual Handle<ShaderDesc>    createShaderDesc() = 0;
 

@@ -1,11 +1,12 @@
 #include "gfx/backend/opengl/BackendGL.hpp"
+#include "gfx/backend/opengl/Mesh.hpp"
 
 namespace gfx::gl 
 {
 
-Handle<Image>         BackendGL::createImage (ImageDesc& desc) 
+Handle<Image>         BackendGL::createImage (const ImageDesc& desc) 
 {
-    return {};
+    return images.Create(desc).Cast<Image>();
 }
 
 Handle<Buffer>        BackendGL::createBuffer(const BufferDesc& desc) 
@@ -13,9 +14,14 @@ Handle<Buffer>        BackendGL::createBuffer(const BufferDesc& desc)
     return buffers.Create(desc).Cast<Buffer>();
 }
 
-Handle<Mesh>          BackendGL::createMesh  (const MeshDesc& desc) 
+Handle<MeshDesc>      BackendGL::meshDescHandle(const MeshDesc& desc)
 {
-    return meshes.Create(*this, desc).Cast<Mesh>();
+    return meshDescs.Create(desc);
+}
+
+Handle<Mesh>          BackendGL::createMesh  (Handle<MeshDesc>& desc) 
+{
+    return meshes.Create(*this, desc.Cast<MeshDescGL>()).Cast<Mesh>();
 }
 
 Handle<ShaderDesc>    BackendGL::createShaderDesc() 
