@@ -229,34 +229,8 @@ struct MultisampleState
     bool  alphaToOne          = false;
 };
 
-enum class VertexInputRate
-{
-    PerVertex,
-    PerInstance
-};
-
-struct VertexBinding
-{
-    uint32_t        binding   = 0;
-    uint32_t        stride    = 0;
-    VertexInputRate inputRate = VertexInputRate::PerVertex;
-};
-
-struct VertexInputState
-{
-    static constexpr uint32_t kMaxBindings   = 16;
-    static constexpr uint32_t kMaxAttributes = 32;
-
-    uint32_t        bindingCount                  = 0;
-    VertexBinding   bindings[kMaxBindings]        = {};
-
-    uint32_t        attributeCount                = 0;
-    VertexAttribute attributes[kMaxAttributes]    = {};
-};
-
 struct PipelineState
 {
-    VertexInputState  vertexInput   = {};
     BlendState        blend         = {};
     DepthState        depth         = {};
     RasterState       raster        = {};

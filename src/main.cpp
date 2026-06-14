@@ -150,6 +150,8 @@ int main() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    GLint texLoc = glGetUniformLocation(shaderProgram, "uTexture");
+
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -158,7 +160,7 @@ int main() {
         
         // DRAW
         image->bind();
-        glUniform1i(glGetUniformLocation(shaderProgram, "uTexture"), 0);
+        glUniform1i(texLoc, 0);
 
         mesh->draw();
 

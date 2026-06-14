@@ -10,8 +10,10 @@
 namespace gfx::gl 
 {
 
-struct BackendGL : Device
+struct BackendGL : public Device
 {
+    BackendGL();
+
     Handle<Image>         createImage (const ImageDesc& desc)  override;
     Handle<Buffer>        createBuffer(const BufferDesc& desc) override;
 

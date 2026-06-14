@@ -7,6 +7,12 @@
 namespace gfx 
 {
 
+enum BackendType
+{
+    OpenGL,
+    Vulkan
+};
+
 struct Shader;
 struct Buffer;
 struct Mesh;
@@ -22,6 +28,8 @@ struct ImageDesc;
 
 struct Device
 {
+    Device(BackendType type) : type(type) {};
+
     virtual Handle<Image>         createImage (const ImageDesc& desc)  = 0;
     virtual Handle<Buffer>        createBuffer(const BufferDesc& desc) = 0;
 
@@ -34,6 +42,10 @@ struct Device
     virtual Handle<PipelineDesc>  createPipelineDesc()  = 0;
 
     virtual ~Device() = default;
+
+    inline BackendType getBackendType() const {return type;}
+private:
+    BackendType type;
 };
 
 }

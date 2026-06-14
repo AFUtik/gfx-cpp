@@ -4,6 +4,11 @@
 namespace gfx::gl 
 {
 
+BackendGL::BackendGL() : Device(BackendType::OpenGL)
+{
+
+}
+
 Handle<Image>         BackendGL::createImage (const ImageDesc& desc) 
 {
     return images.Create(desc).Cast<Image>();
