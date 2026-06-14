@@ -5,6 +5,20 @@
 namespace gfx::gl 
 {
 
+GLenum ToGLShaderType(ShaderStage stage)
+{
+    switch (stage)
+    {
+        case ShaderStage::Vertex:         return GL_VERTEX_SHADER;
+        case ShaderStage::Fragment:       return GL_FRAGMENT_SHADER;
+        case ShaderStage::Geometry:       return GL_GEOMETRY_SHADER;
+        case ShaderStage::TessControl:    return GL_TESS_CONTROL_SHADER;
+        case ShaderStage::TessEvaluation: return GL_TESS_EVALUATION_SHADER;
+        case ShaderStage::Compute:        return GL_COMPUTE_SHADER;
+        default:                          return 0;
+    }
+}
+
 uint32_t toGLUnsignedType(uint64_t size)
 {
     switch (size) 
@@ -40,6 +54,39 @@ uint32_t bufferUsageHint(BufferUsage usage, BufferAccess access)
             : GL_STREAM_DRAW;
 
     return GL_DYNAMIC_READ; // GPU → CPU
+}
+
+void applyBlendMode(BlendMode mode)
+{
+    switch (mode)
+    {
+        case BlendMode::Opaque:
+        case BlendMode::None:
+            glDisable(GL_BLEND);
+            break;
+
+        case BlendMode::Alpha:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glBlendEquation(GL_FUNC_ADD);
+            break;
+
+        case BlendMode::Additive:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            glBlendEquation(GL_FUNC_ADD);
+            break;
+
+        case BlendMode::Multiply:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_DST_COLOR, GL_ZERO);
+            break;
+
+        case BlendMode::Screen:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+            break;
+    }
 }
 
 }

@@ -22,18 +22,18 @@ struct FragmentState
     std::vector<Handle<ColorTarget>> targets;
 };
 
-struct RenderPipeline
-{
-
-};
-
-struct RenderPipelineDescriptor
+struct RenderPipelineDesc
 {
     VertexState   vertexState;
     FragmentState fragState;
 
     Handle<PipelineState>  pipelineState;
     Handle<PipelineLayout> pipelineLayout;
+};
+
+struct RenderPipeline
+{
+    RenderPipelineDesc descriptor;
 };
 
 }

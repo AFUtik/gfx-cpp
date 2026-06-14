@@ -2,9 +2,16 @@
 #include <GLFW/glfw3.h>
 
 #include "gfx/Backend.hpp"
+#include "gfx/BindGroupLayout.hpp"
+#include "gfx/ColorTarget.hpp"
 #include "gfx/Handle.hpp"
 #include "gfx/IImage.hpp"
 #include "gfx/IMesh.hpp"
+#include "gfx/IShader.hpp"
+#include "gfx/PipelineLayout.hpp"
+#include "gfx/PipelineState.hpp"
+#include "gfx/RenderPass.hpp"
+#include "gfx/RenderPipeline.hpp"
 #include "gfx/Vertex.hpp"
 
 #include <iostream>
@@ -63,6 +70,59 @@ struct Texture
 
 int main() {
     auto device = gfx::createOpenGLBackend();
+
+    // Pipeline Creation
+    gfx::Handle<gfx::PipelineLayout> pipelineLayout = device->createPipelineLayout(
+        gfx::PipelineLayoutDesc{}
+            .add(
+                gfx::BindGroupLayout{}
+                    .add(
+                        gfx::BindGroupLayoutEntry{
+                            .type = gfx::TextureTypeStruct{.sample_type = gfx::TextureSampleType::Float},
+                            .binding = 0,
+                            .visibility = (uint32_t)gfx::ShaderStage::Fragment}
+                    )
+            )
+    );
+
+    gfx::Handle<gfx::PipelineState> pipelineState = device->createPipelineState();
+
+    gfx::Handle<gfx::Shader> vshader = device->createShader(
+        gfx::ShaderDesc{
+            .spirv = {}, 
+            .glsl  = vertexShaderSrc,
+            .stage = gfx::ShaderStage::Vertex
+        }
+    );
+    gfx::Handle<gfx::Shader> fshader = device->createShader(
+        gfx::ShaderDesc{
+            .spirv = {}, 
+            .glsl  = fragmentShaderSrc,
+            .stage = gfx::ShaderStage::Fragment
+        }
+    );
+
+    gfx::RenderPipelineDesc pipelineDesc{};
+    pipelineDesc.pipelineLayout = pipelineLayout;
+    pipelineDesc.pipelineState  = pipelineState;
+    pipelineDesc.vertexState    = gfx::VertexState{
+        .module = vshader,
+        .layout = gfx::Vertex::getLayout()
+    };
+    pipelineDesc.fragState      = gfx::FragmentState{
+        .module  = fshader,
+        .targets = {}
+    };
+    gfx::Handle<gfx::RenderPipeline> pipeline = device->createRenderPipeline(pipelineDesc);
+    
+    // RenderPass
+    gfx::RenderPass* renderPass = device->createScreenRenderPass(
+        gfx::RenderPassDesc{
+            .colorTargets = {},
+            .depthTarget  = {},
+            .clearColor = glm::vec4(0.4f, 0.4f, 0.4f, 1.0f)
+        }
+    );
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -128,41 +188,13 @@ int main() {
     );
     image->write(texture.pixels.get());
 
-    // compile vertex shader
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSrc, nullptr);
-    glCompileShader(vertexShader);
-
-    // compile fragment shader
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSrc, nullptr);
-    glCompileShader(fragmentShader);
-
-    // shader program
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    GLint texLoc = glGetUniformLocation(shaderProgram, "uTexture");
-
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        renderPass->begin();
 
-        glUseProgram(shaderProgram);
-        
-        // DRAW
         image->bind();
-        glUniform1i(texLoc, 0);
-
         mesh->draw();
+
+        renderPass->end();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

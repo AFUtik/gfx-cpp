@@ -5,19 +5,12 @@
 namespace gfx::gl
 {
 
-struct ShaderDescGL;
-
 struct ShaderGL : Shader
 {
+    ShaderGL(const ShaderDesc& desc);
+    ~ShaderGL();
 private:
-    uint32_t             shader;
-    Handle<ShaderDescGL> descriptor;
+    uint32_t shader;
 };
-
-struct ShaderDescGL : ShaderDesc
-{
-    Handle<Shader> compile() override;
-};
-
 
 }

@@ -4,56 +4,29 @@
 #include <vector>
 #include <string>
 
-#include "Handle.hpp"
-
 namespace gfx 
 {
 
 enum class ShaderStage
 {
-    Vertex,
-    Fragment,
-    Geometry,
-    TessControl,
-    TessEvaluation,
-    Compute,
-    RTX
+    Vertex          = 1<<0,
+    Fragment        = 1<<1,
+    Geometry        = 1<<2,
+    TessControl     = 1<<3,
+    TessEvaluation  = 1<<4,
+    Compute         = 1<<5
 };
 
 struct Shader
 {
-
+    virtual ~Shader() = default;
 };
 
 struct ShaderDesc
 {
+    std::vector<uint32_t> spirv;
+    const char*           glsl = nullptr;
     ShaderStage stage;
-    std::string openglShader = "";
-    std::string vulkanShader = "";
-
-    virtual Handle<Shader> compile() = 0;
-};
-
-
-struct ResourceSlot
-{
-    enum class Type
-    {
-        Texture,
-        UniformBuffer,
-        StorageBuffer
-    };
-
-    uint32_t set;
-    uint32_t binding;
-
-    Type type;
-    ShaderStage stages;
-};
-
-struct ShaderResourceSignature
-{
-    std::vector<ResourceSlot> sets;
 };
 
 }

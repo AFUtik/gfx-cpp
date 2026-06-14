@@ -1,5 +1,12 @@
 #include "gfx/backend/opengl/BackendGL.hpp"
+#include "gfx/Handle.hpp"
+#include "gfx/RenderPass.hpp"
 #include "gfx/backend/opengl/Mesh.hpp"
+#include "gfx/backend/opengl/RenderPass.hpp"
+#include "gfx/backend/opengl/RenderPipeline.hpp"
+
+#include "gfx/PipelineLayout.hpp"
+#include "gfx/RenderPipeline.hpp"
 
 namespace gfx::gl 
 {
@@ -29,19 +36,36 @@ Handle<Mesh>          BackendGL::createMesh  (Handle<MeshDesc>& desc)
     return meshes.Create(*this, desc.Cast<MeshDescGL>()).Cast<Mesh>();
 }
 
-Handle<ShaderDesc>    BackendGL::createShaderDesc() 
+Handle<Shader>        BackendGL::createShader(const ShaderDesc& desc) 
 {
-    return {};
+    return shaders.Create(desc);
 }
 
+RenderPass*        BackendGL::createScreenRenderPass(const RenderPassDesc& desc)
+{
+    screenRenderPass = std::make_unique<ScreenRenderPassGL>(desc);
+    return static_cast<RenderPass*>(screenRenderPass.get());
+}
+
+Handle<RenderPass> BackendGL::createRenderPass      (const RenderPassDesc& desc)
+{
+    return renderPasses.Create(desc);
+}
+
+// Pipeline 
 Handle<PipelineState> BackendGL::createPipelineState() 
 {
-    return {};
+    return pipelineStates.Create();
 }
 
-Handle<PipelineDesc>  BackendGL::createPipelineDesc() 
+Handle<PipelineLayout> BackendGL::createPipelineLayout(const PipelineLayoutDesc& desc)
 {
-    return {};
+    return pipelineLayouts.Create(desc);
+}
+
+Handle<RenderPipeline> BackendGL::createRenderPipeline(const RenderPipelineDesc& desc) 
+{
+    return renderPipelines.Create(desc);
 }
 
 }

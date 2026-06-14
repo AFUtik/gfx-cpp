@@ -8,18 +8,6 @@
 namespace gfx 
 {
 
-enum BindingType
-{
-    Buffer,
-    Image
-};
-
-enum BufferBindingType
-{
-    Uniform,
-    SSBO
-};
-
 struct BindGroupLayout;
 
 struct BindGroupEntry
