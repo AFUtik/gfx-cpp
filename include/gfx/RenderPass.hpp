@@ -1,30 +1,62 @@
 #pragma once
 
 #include "Handle.hpp"
+#include "IImage.hpp"
 
 #include <vector>
-#include <glm/glm.hpp>
+#include <array>
 
 namespace gfx 
 {
 
-struct Image;
-struct ColorTarget;
+struct Framebuffer;
+struct RenderPipeline;
+
+struct BindGroup;
+
+enum AttachmentType
+{
+    ATTACHMENT_TYPE_COLOR,
+    ATTACHMENT_TYPE_DEPTH
+};
+
+enum class LoadOp
+{
+    LOAD_OP,
+    CLEAR_OP,
+};
+
+enum class StoreOp
+{
+    STORE_OP,
+};
+
+struct ColorAttachment
+{
+    AttachmentType type    = AttachmentType::ATTACHMENT_TYPE_COLOR;
+    ImageFormat    format  = ImageFormat::RGBA8;
+    LoadOp         loadOp  = LoadOp::LOAD_OP;
+    StoreOp        storeOp = StoreOp::STORE_OP;
+};
 
 struct RenderPass
 {
-    virtual void begin() = 0;
-    virtual void end()   = 0;
+    virtual int checkCompatibilityWithFBO(Handle<Framebuffer>& framebuffer)      = 0;
+    virtual int checkCompatibilityWithPipeline(Handle<RenderPipeline>& pipeline) {return 1;};
+
+    virtual void setRenderPipeline(RenderPipeline* pipeline) = 0;
+    virtual void setBindGroup     (BindGroup* group) = 0;
+
+    virtual void begin(const Framebuffer* framebuffer) = 0;
+    virtual void end  () = 0;
 protected:
-    glm::vec4 clearColor;
+    std::array<float, 4> clearColor;
 };
 
 struct RenderPassDesc
-{
-    std::vector<Handle<ColorTarget>> colorTargets;
-    Handle<Image>                    depthTarget;
-
-    glm::vec4 clearColor;
+{  
+    std::vector<ColorAttachment> attachments;
+    std::array<float, 4> clearColor;
 };
 
 }

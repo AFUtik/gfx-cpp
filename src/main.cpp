@@ -2,8 +2,10 @@
 #include <GLFW/glfw3.h>
 
 #include "gfx/Backend.hpp"
+#include "gfx/BindGroup.hpp"
 #include "gfx/BindGroupLayout.hpp"
 #include "gfx/ColorTarget.hpp"
+#include "gfx/Framebuffer.hpp"
 #include "gfx/Handle.hpp"
 #include "gfx/IImage.hpp"
 #include "gfx/IMesh.hpp"
@@ -21,7 +23,7 @@
 
 // Vertex Shader
 const char* vertexShaderSrc = R"(
-#version 330 core
+#version 430 core
 
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aUv;
@@ -40,25 +42,20 @@ void main() {
 
 // Fragment Shader
 const char* fragmentShaderSrc = R"(
-#version 330 core
+#version 430 core
 
 in vec3 f_color;
 in vec2 tex_coord;
 
 out vec4 FragColor;
 
-uniform sampler2D uTexture;
+layout(binding = 0) uniform sampler2D uTexture;
 
 void main() {
     vec4 color = texture(uTexture, tex_coord) * vec4(f_color, 1.0f);
     FragColor = color;
 }
 )";
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
 
 struct Texture
 {
@@ -69,26 +66,26 @@ struct Texture
 };
 
 int main() {
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Triangle", nullptr, nullptr);
+    glfwMakeContextCurrent(window);
+
+    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+
     auto device = gfx::createOpenGLBackend();
 
-    // Pipeline Creation
-    gfx::Handle<gfx::PipelineLayout> pipelineLayout = device->createPipelineLayout(
-        gfx::PipelineLayoutDesc{}
-            .add(
-                gfx::BindGroupLayout{}
-                    .add(
-                        gfx::BindGroupLayoutEntry{
-                            .type = gfx::TextureTypeStruct{.sample_type = gfx::TextureSampleType::Float},
-                            .binding = 0,
-                            .visibility = (uint32_t)gfx::ShaderStage::Fragment}
-                    )
-            )
-    );
-
-    gfx::Handle<gfx::PipelineState> pipelineState = device->createPipelineState();
-
+    // Screen Framebuffer
+    gfx::Framebuffer& fbo = device->getScreenFramebuffer();
+    fbo.resize(800, 600);
+    
+    // Shaders
     gfx::Handle<gfx::Shader> vshader = device->createShader(
         gfx::ShaderDesc{
+            .name  = "VertexShader",
             .spirv = {}, 
             .glsl  = vertexShaderSrc,
             .stage = gfx::ShaderStage::Vertex
@@ -96,12 +93,77 @@ int main() {
     );
     gfx::Handle<gfx::Shader> fshader = device->createShader(
         gfx::ShaderDesc{
+            .name  = "FragmentShader",
             .spirv = {}, 
             .glsl  = fragmentShaderSrc,
             .stage = gfx::ShaderStage::Fragment
         }
     );
 
+    // BindGroupLayout 
+    gfx::Handle<gfx::BindGroupLayout> bindGroupLayout = device->createBindGroupLayout(
+        gfx::BindGroupLayoutDesc{}
+                .add(
+                    gfx::BindGroupLayoutEntry{
+                        .type = gfx::TextureTypeStruct{.sample_type = gfx::TextureSampleType::Float},
+                        .binding = 0,
+                        .visibility = (uint32_t)gfx::ShaderStage::Fragment}
+                )
+    );
+
+    // BindGroup
+        // Image loading
+    stbi_set_flip_vertically_on_load(true);
+    Texture texture;
+    texture.pixels.reset(
+        stbi_load(
+            "/home/afutik/cplusplus/GFX/kharkiv.png",
+            &texture.width,
+            &texture.height,
+            &texture.channels,
+            4
+        )
+    );
+
+    gfx::Handle<gfx::Image> image = device->createImage(
+        gfx::ImageDesc{
+            .width    = (uint32_t)texture.width,
+            .height   = (uint32_t)texture.height,
+            .channels = 4,
+            .filter   = gfx::ImageFilter::NEAREST
+        }
+    );
+    image->write(texture.pixels.get());
+
+        // Setting Bind Group
+    gfx::BindGroup bindGroup{
+        .layout  = bindGroupLayout,
+        .entries = {gfx::BindGroupEntry{
+            .binding  = 0,
+            .resource = image.Cast<gfx::unknown_type>()
+        }},
+    };
+
+    // Pipeline Layout
+    gfx::Handle<gfx::PipelineLayout> pipelineLayout = device->createPipelineLayout(
+        gfx::PipelineLayoutDesc{.layouts = {bindGroupLayout}}
+    );
+
+    // Pipeline State
+    gfx::Handle<gfx::PipelineState> pipelineState = device->createPipelineState();
+    pipelineState->blend.attachments[0] = {
+        .enabled  = true,
+
+        .srcColor = gfx::BlendFactor::SrcAlpha,
+        .dstColor = gfx::BlendFactor::OneMinusSrcAlpha,
+        .colorOp  = gfx::BlendOp::Add,
+
+        .srcAlpha = gfx::BlendFactor::One,
+        .dstAlpha = gfx::BlendFactor::OneMinusSrcAlpha,
+        .alphaOp  = gfx::BlendOp::Add,
+    };
+
+    // Render Pipeline
     gfx::RenderPipelineDesc pipelineDesc{};
     pipelineDesc.pipelineLayout = pipelineLayout;
     pipelineDesc.pipelineState  = pipelineState;
@@ -116,31 +178,27 @@ int main() {
     gfx::Handle<gfx::RenderPipeline> pipeline = device->createRenderPipeline(pipelineDesc);
     
     // RenderPass
-    gfx::RenderPass* renderPass = device->createScreenRenderPass(
+    gfx::Handle<gfx::RenderPass> pass = device->createRenderPass(
         gfx::RenderPassDesc{
-            .colorTargets = {},
-            .depthTarget  = {},
-            .clearColor = glm::vec4(0.4f, 0.4f, 0.4f, 1.0f)
+            .attachments = {
+                gfx::ColorAttachment{
+                    .type    = gfx::AttachmentType::ATTACHMENT_TYPE_COLOR,
+                    .format  = gfx::ImageFormat::RGBA8,
+                    .loadOp  = gfx::LoadOp::LOAD_OP,
+                    .storeOp = gfx::StoreOp::STORE_OP 
+                }
+            },
+            .clearColor  = {0.4f, 0.4f, 0.4f, 1.0f}
         }
     );
 
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Triangle", nullptr, nullptr);
-    glfwMakeContextCurrent(window);
-
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-
-    glViewport(0, 0, 800, 600);
-
+    glfwSetWindowUserPointer(window, &fbo);
     glfwSetFramebufferSizeCallback(
         window,
-        [](GLFWwindow*, int width, int height)
+        [](GLFWwindow* window, int width, int height)
         {
-            glViewport(0, 0, width, height);
+            auto* fbo =static_cast<gfx::Framebuffer*>(glfwGetWindowUserPointer(window));
+            if(fbo) fbo->resize(width, height);
         }
     );
 
@@ -166,35 +224,15 @@ int main() {
     mesh->updateVertices(vertices.data(), vertices.size());
     mesh->updateIndexes (indices.data(), indices.size());
 
-    stbi_set_flip_vertically_on_load(true);
-    Texture texture;
-    texture.pixels.reset(
-        stbi_load(
-            "/home/afutik/cplusplus/GFX/kharkiv.png",
-            &texture.width,
-            &texture.height,
-            &texture.channels,
-            4
-        )
-    );
-
-    gfx::Handle<gfx::Image> image = device->createImage(
-        gfx::ImageDesc{
-            .width    = (uint32_t)texture.width,
-            .height   = (uint32_t)texture.height,
-            .channels = 4,
-            .filter   = gfx::ImageFilter::NEAREST
-        }
-    );
-    image->write(texture.pixels.get());
-
     while (!glfwWindowShouldClose(window)) {
-        renderPass->begin();
+        pass->begin(&fbo);
 
-        image->bind();
+        pass->setRenderPipeline(pipeline.Get());
+        pass->setBindGroup(&bindGroup);
+
         mesh->draw();
 
-        renderPass->end();
+        pass->end();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

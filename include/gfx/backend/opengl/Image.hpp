@@ -18,6 +18,7 @@ private:
     uint32_t  tex;
     ImageDesc desc;
 
+    friend class FramebufferGL;
     friend class RenderPassGL;
 };
 

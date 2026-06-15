@@ -10,21 +10,15 @@ struct RenderPassGL : public RenderPass
     RenderPassGL(const RenderPassDesc& desc);
     ~RenderPassGL();
 
-    void begin() override;
+    int checkCompatibilityWithFBO(Handle<Framebuffer>& framebuffer) override;
+
+    void setRenderPipeline(RenderPipeline* pipeline) override;
+    void setBindGroup     (BindGroup* group) override;
+
+    void begin(const Framebuffer* framebuffer) override;
     void end()   override;
-protected:
-    RenderPassGL();
-protected:
-    void createFBO(const RenderPassDesc& desc);
-
-    uint32_t fbo;
-    uint32_t fbo_width  = 0 ;
-    uint32_t fbo_height = 0;
-};
-
-struct ScreenRenderPassGL : public RenderPassGL
-{
-    ScreenRenderPassGL(const RenderPassDesc& desc);
+private:
+    RenderPipeline* currentPipeline = nullptr;
 };
 
 }

@@ -5,6 +5,15 @@
 namespace gfx 
 {
 
+enum class ImageFormat
+{
+    RGBA8,
+    RGBA16F,
+
+    Depth24Stencil8,
+    Depth32F
+};
+
 enum ImageFilter
 {
     LINEAR,

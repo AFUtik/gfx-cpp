@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Handle.hpp"
+
 #include "BindGroupLayout.hpp"
 #include <vector>
 
@@ -13,13 +15,7 @@ struct PipelineLayout
 
 struct PipelineLayoutDesc
 {
-    std::vector<BindGroupLayout> layouts;
-
-    inline PipelineLayoutDesc& add(const BindGroupLayout& group)
-    {
-        layouts.push_back(group);
-        return *this;
-    }
+    std::vector<Handle<BindGroupLayout>> layouts;
 };
 
 }

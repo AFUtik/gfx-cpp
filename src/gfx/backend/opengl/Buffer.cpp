@@ -31,7 +31,6 @@ void BufferGL::write(const void* data, uint64_t sz, uint64_t offset)
     glBufferSubData(target, offset, sz, data);
 }
 
-
 void* BufferGL::map()
 {
     glBindBuffer(target, buffer);

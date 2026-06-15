@@ -3,15 +3,10 @@
 #include <cstdint>
 #include <vector>
 #include <variant>
+#include <string>
 
 namespace gfx 
 {
-
-enum BufferBindingType
-{
-    Uniform,
-    SSBO
-};
 
 enum TextureSampleType {
     Float,
@@ -22,7 +17,7 @@ enum TextureSampleType {
 
 struct BufferTypeStruct
 {
-    BufferBindingType type;
+    uint32_t type;
 };
 
 struct TextureTypeStruct
@@ -35,22 +30,33 @@ using BindingType = std::variant<
     TextureTypeStruct
 >;
 
+enum BindingTypeEnum
+{
+    BINDING_TYPE_BUFFER,
+    BINDING_TYPE_IMAGE,
+};
+
 struct BindGroupLayoutEntry
 {
     BindingType type;
-    uint32_t binding = 0;
+    uint32_t binding     = 0;
     uint32_t visibility;
+    
+    // For GLSL shader
+    std::string uniformName = ""; 
 };
 
-struct BindGroupLayout
+struct BindGroupLayoutDesc
 {
     std::vector<BindGroupLayoutEntry> entries;
 
-    inline BindGroupLayout& add(const BindGroupLayoutEntry& entry)
+    inline BindGroupLayoutDesc& add(const BindGroupLayoutEntry& entry)
     {
         entries.push_back(entry);
         return *this;
     }
 };
+
+struct BindGroupLayout {};
 
 }

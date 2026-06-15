@@ -131,7 +131,7 @@ enum class StencilOp
 
 struct BlendAttachmentState
 {
-    bool           enabled   = false;
+    bool           enabled   = true;
 
     BlendFactor    srcColor  = BlendFactor::One;
     BlendFactor    dstColor  = BlendFactor::Zero;
@@ -194,7 +194,7 @@ struct DepthBiasState
 
 struct RasterState
 {
-    CullMode  cull      = CullMode::Back;
+    CullMode  cull      = CullMode::Front;
     FillMode  fill      = FillMode::Fill;
     FrontFace frontFace = FrontFace::CounterClockwise;
 

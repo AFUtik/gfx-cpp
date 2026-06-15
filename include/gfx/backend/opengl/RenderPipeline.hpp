@@ -13,6 +13,8 @@ struct RenderPipelineGL : RenderPipeline
     ~RenderPipelineGL();
 private:
     uint32_t program;
+
+    friend struct RenderPassGL;
 };
 
 }

@@ -24,6 +24,7 @@ struct Shader
 
 struct ShaderDesc
 {
+    std::string name;
     std::vector<uint32_t> spirv;
     const char*           glsl = nullptr;
     ShaderStage stage;

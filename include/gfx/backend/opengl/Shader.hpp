@@ -11,6 +11,8 @@ struct ShaderGL : Shader
     ~ShaderGL();
 private:
     uint32_t shader;
+
+    friend class RenderPipelineGL;
 };
 
 }

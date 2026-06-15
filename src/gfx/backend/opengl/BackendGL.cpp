@@ -1,17 +1,9 @@
 #include "gfx/backend/opengl/BackendGL.hpp"
-#include "gfx/Handle.hpp"
-#include "gfx/RenderPass.hpp"
-#include "gfx/backend/opengl/Mesh.hpp"
-#include "gfx/backend/opengl/RenderPass.hpp"
-#include "gfx/backend/opengl/RenderPipeline.hpp"
-
-#include "gfx/PipelineLayout.hpp"
-#include "gfx/RenderPipeline.hpp"
 
 namespace gfx::gl 
 {
 
-BackendGL::BackendGL() : Device(BackendType::OpenGL)
+BackendGL::BackendGL() : Device(BackendType::OpenGL), screenFBO(*this)
 {
 
 }
@@ -41,10 +33,14 @@ Handle<Shader>        BackendGL::createShader(const ShaderDesc& desc)
     return shaders.Create(desc);
 }
 
-RenderPass*        BackendGL::createScreenRenderPass(const RenderPassDesc& desc)
+Handle<BindGroupLayout> BackendGL::createBindGroupLayout(const BindGroupLayoutDesc& desc)
 {
-    screenRenderPass = std::make_unique<ScreenRenderPassGL>(desc);
-    return static_cast<RenderPass*>(screenRenderPass.get());
+    return bindGroupLayouts.Create(desc);
+}
+
+Handle<Framebuffer>   BackendGL::createFramebuffer     (const FramebufferDesc& desc)
+{
+    return framebuffers.Create(*this, desc);
 }
 
 Handle<RenderPass> BackendGL::createRenderPass      (const RenderPassDesc& desc)
@@ -52,7 +48,6 @@ Handle<RenderPass> BackendGL::createRenderPass      (const RenderPassDesc& desc)
     return renderPasses.Create(desc);
 }
 
-// Pipeline 
 Handle<PipelineState> BackendGL::createPipelineState() 
 {
     return pipelineStates.Create();

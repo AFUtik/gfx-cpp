@@ -1,7 +1,6 @@
 #pragma once
 
-#include "gfx/Handle.hpp"
-#include <cstdint>
+#include "gfx/IImage.hpp"
 
 namespace gfx 
 {
@@ -19,11 +18,20 @@ enum class BlendMode
 };
 
 struct ColorTargetDesc
-{
-    Handle<Image> image;
+{   
+    ImageFormat format;
     BlendMode blend;
     bool writeColor = true;
     bool writeAlpha = true;
+    uint32_t width;
+    uint32_t height;
+};
+
+struct DepthTargetDesc
+{
+    ImageFormat format;
+    uint32_t width;
+    uint32_t height;
 };
 
 }
