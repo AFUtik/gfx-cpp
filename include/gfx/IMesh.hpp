@@ -1,8 +1,6 @@
 #pragma once
 
 #include "IDevice.hpp"
-#include <cstdint>
-
 #include "Vertex.hpp"
 
 namespace gfx 

@@ -1,9 +1,7 @@
 #pragma once
 
-#include <cstdint>
-
 #include <glm/glm.hpp>
-#include <vector>
+#include "pch.hpp"
 
 namespace gfx
 {

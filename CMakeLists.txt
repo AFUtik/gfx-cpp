@@ -1,10 +1,7 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 4.1.2)
 project(GFX VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(VCPKG_APPLOCAL_DEPS OFF)
 
 file(GLOB_RECURSE SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
@@ -12,6 +9,10 @@ file(GLOB_RECURSE SOURCES
 )
 
 add_executable(GFX ${SOURCES})
+
+target_precompile_headers(GFX PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/include/pch.hpp>"
+)
 
 target_include_directories(GFX PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/include

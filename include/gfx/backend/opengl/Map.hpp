@@ -5,9 +5,6 @@
 #include "gfx/ColorTarget.hpp"
 #include "gfx/PipelineState.hpp"
 
-
-#include <cstdint>
-
 namespace gfx::gl 
 {
 

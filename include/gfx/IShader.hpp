@@ -1,8 +1,6 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-#include <string>
+#include "pch.hpp"
 
 namespace gfx 
 {

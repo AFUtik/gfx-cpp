@@ -6,3 +6,5 @@
 -Wno-unknown-pragmas
 -Wno-deprecated-declarations
 -Wno-unused-parameter
+
+-fmodule-file=MyModule=modules/test.cppm

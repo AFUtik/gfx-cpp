@@ -1,7 +1,7 @@
 #pragma once
 
 #include "IDevice.hpp"
-#include <memory>
+#include "pch.hpp"
 
 namespace gfx 
 {

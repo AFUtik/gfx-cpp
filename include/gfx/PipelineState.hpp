@@ -2,7 +2,6 @@
 
 #include "IShader.hpp"
 #include "Handle.hpp"
-
 #include "Vertex.hpp"
 
 namespace gfx 

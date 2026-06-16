@@ -1,11 +1,7 @@
 #pragma once
 
 #include "Handle.hpp"
-
-#include <memory>
-#include <new>
-#include <vector>
-#include <cstring>
+#include "pch.hpp"
 
 namespace gfx
 {
