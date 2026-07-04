@@ -13,12 +13,13 @@
 #include "gfx/RenderPipeline.hpp"
 #include "gfx/Vertex.hpp"
 
+#include "gfx/backend/vulkan/BackendVK.hpp"
+#include "thirdparties/stb_image.h" 
+
 #include "Window.hpp"
 #include "Events.hpp"
-#include <GLFW/glfw3.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "thirdparties/stb_image.h" 
+#include <GLFW/glfw3.h>
 
 // Vertex Shader
 const char* vertexShaderSrc = R"(
@@ -72,40 +73,8 @@ int main() {
 
     Events::init(&windowInstance);
 
-    auto device = gfx::createOpenGLBackend(&windowInstance);
-
-    // Screen Framebuffer
-    gfx::Framebuffer& fbo = device->getScreenFramebuffer();
-    fbo.resize(800, 600);
-
-    // Shaders
-    gfx::Handle<gfx::Shader> vshader = device->createShader(
-        gfx::ShaderDesc{
-            .name  = "VertexShader",
-            .spirv = {}, 
-            .glsl  = vertexShaderSrc,
-            .stage = gfx::ShaderStage::Vertex
-        }
-    );
-    gfx::Handle<gfx::Shader> fshader = device->createShader(
-        gfx::ShaderDesc{
-            .name  = "FragmentShader",
-            .spirv = {}, 
-            .glsl  = fragmentShaderSrc,
-            .stage = gfx::ShaderStage::Fragment
-        }
-    );
-
-    // BindGroupLayout 
-    gfx::Handle<gfx::BindGroupLayout> bindGroupLayout = device->createBindGroupLayout(
-        gfx::BindGroupLayoutDesc{}
-                .add(
-                    gfx::BindGroupLayoutEntry{
-                        .type = gfx::TextureTypeStruct{.sample_type = gfx::TextureSampleType::Float},
-                        .binding = 0,
-                        .visibility = (uint32_t)gfx::ShaderStage::Fragment}
-                )
-    );
+    auto device = gfx::createVulkanBackend(&windowInstance);
+    gfx::vk::BackendVK* vk = reinterpret_cast<gfx::vk::BackendVK*>(device.get());
 
     // BindGroup
         // Image loading
@@ -121,73 +90,6 @@ int main() {
         )
     );
 
-    gfx::Handle<gfx::Image> image = device->createImage(
-        gfx::ImageDesc{
-            .width    = (uint32_t)texture.width,
-            .height   = (uint32_t)texture.height,
-            .channels = 4,
-            .filter   = gfx::ImageFilter::NEAREST
-        }
-    );
-    image->write(texture.pixels.get());
-
-        // Setting Bind Group
-    gfx::BindGroup bindGroup{
-        .layout  = bindGroupLayout,
-        .entries = {gfx::BindGroupEntry{
-            .binding  = 0,
-            .resource = image.Cast<gfx::unknown_type>()
-        }},
-    };
-
-    // Pipeline Layout
-    gfx::Handle<gfx::PipelineLayout> pipelineLayout = device->createPipelineLayout(
-        gfx::PipelineLayoutDesc{.layouts = {bindGroupLayout}}
-    );
-
-    // Pipeline State
-    gfx::Handle<gfx::PipelineState> pipelineState = device->createPipelineState();
-    pipelineState->blend.attachments[0] = {
-        .enabled  = true,
-
-        .srcColor = gfx::BlendFactor::SrcAlpha,
-        .dstColor = gfx::BlendFactor::OneMinusSrcAlpha,
-        .colorOp  = gfx::BlendOp::Add,
-
-        .srcAlpha = gfx::BlendFactor::One,
-        .dstAlpha = gfx::BlendFactor::OneMinusSrcAlpha,
-        .alphaOp  = gfx::BlendOp::Add,
-    };
-
-    // Render Pipeline
-    gfx::RenderPipelineDesc pipelineDesc{};
-    pipelineDesc.pipelineLayout = pipelineLayout;
-    pipelineDesc.pipelineState  = pipelineState;
-    pipelineDesc.vertexState    = gfx::VertexState{
-        .module = vshader,
-        .layout = gfx::Vertex::getLayout()
-    };
-    pipelineDesc.fragState      = gfx::FragmentState{
-        .module  = fshader,
-        .targets = {}
-    };
-    gfx::Handle<gfx::RenderPipeline> pipeline = device->createRenderPipeline(pipelineDesc);
-
-    // RenderPass
-    gfx::Handle<gfx::RenderPass> pass = device->createRenderPass(
-        gfx::RenderPassDesc{
-            .attachments = {
-                gfx::ColorAttachment{
-                    .type    = gfx::AttachmentType::ATTACHMENT_TYPE_COLOR,
-                    .format  = gfx::ImageFormat::RGBA8,
-                    .loadOp  = gfx::LoadOp::LOAD_OP,
-                    .storeOp = gfx::StoreOp::STORE_OP 
-                }
-            },
-            .clearColor  = {0.4f, 0.4f, 0.4f, 1.0f}
-        }
-    );
-
     std::vector<gfx::Vertex> vertices = {
         gfx::Vertex{{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
         gfx::Vertex{{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}},
@@ -198,32 +100,18 @@ int main() {
         0, 1, 3,
         1, 2, 3
     };
-
-    gfx::Handle<gfx::MeshDesc> desc = device->meshDescHandle(
-        gfx::MeshDesc{
-            .layout = gfx::Vertex::getLayout(),
-            .indexStride = sizeof(uint32_t)
-        }
-    );
-
-    gfx::Handle<gfx::Mesh> mesh = device->createMesh(desc);
-    mesh->updateVertices(vertices.data(), vertices.size());
-    mesh->updateIndexes (indices.data(), indices.size());
-
     while (!windowInstance.isShouldClose()) {
         if(Events::jpressed(GLFW_KEY_ESCAPE))
         {
             return 0;
         }
 
-        pass->begin(&fbo);
+        vk->renderer.beginFrame();
 
-        pass->setRenderPipeline(pipeline.Get());
-        pass->setBindGroup(&bindGroup);
+        vk->renderer.beginSwapChainRenderPass();
+        vk->renderer.endSwapChainRenderPass();
 
-        mesh->draw();
-
-        pass->end();
+        vk->renderer.endFrame();
 
         windowInstance.swapBuffers();
         Events::pullEvents();

@@ -1,6 +1,7 @@
 -Isrc
 -Iinclude
 -Iglad/include
+-I/home/afutik/code/cplusplus/vcpkg/installed/x64-linux/include
 -std=c++20
 -Wno-macro-redefined
 -Wno-unknown-pragmas

@@ -46,7 +46,7 @@ struct Device
 
     virtual Handle<Shader>         createShader(const ShaderDesc& desc) = 0;
 
-    virtual Framebuffer&            getScreenFramebuffer  () = 0;
+    virtual Framebuffer*            getScreenFramebuffer  () = 0;
     virtual Handle<BindGroupLayout> createBindGroupLayout (const BindGroupLayoutDesc& desc) = 0;
     virtual Handle<Framebuffer>     createFramebuffer     (const FramebufferDesc& desc) = 0;
     virtual Handle<RenderPass>      createRenderPass      (const RenderPassDesc&  desc) = 0;

@@ -19,9 +19,16 @@ target_include_directories(GFX PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/glad/include
 )
 
+find_package(Vulkan REQUIRED)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(glm CONFIG REQUIRED)
 
-target_link_libraries(GFX PRIVATE glfw)
+target_link_libraries(GFX PRIVATE 
+    glfw
+    Vulkan::Vulkan
+    GPUOpen::VulkanMemoryAllocator
+    glm::glm)
 
 if (WIN32)
     target_link_libraries(GFX PRIVATE opengl32)

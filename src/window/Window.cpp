@@ -19,9 +19,7 @@ int Window::init(int width, int height, const char* title) {
 		return -1;
 	}
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 	window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 	if (window == nullptr) {
@@ -29,7 +27,7 @@ int Window::init(int width, int height, const char* title) {
 		glfwTerminate();
 		return -1;
 	}
-    glfwMakeContextCurrent(window);
+    
 	glfwSetWindowUserPointer(window, this);
 	glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 	return 0;

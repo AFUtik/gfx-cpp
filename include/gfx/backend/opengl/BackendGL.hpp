@@ -42,9 +42,9 @@ struct BackendGL : public Device
     Handle<PipelineLayout> createPipelineLayout  (const PipelineLayoutDesc& desc) override;
     Handle<RenderPipeline> createRenderPipeline  (const RenderPipelineDesc& desc) override;
 
-    inline Framebuffer&    getScreenFramebuffer() override
+    Framebuffer*    getScreenFramebuffer() override
     {
-        return screenFBO;
+        return &screenFBO;
     }
 private:
     Window*       windowInstance;
