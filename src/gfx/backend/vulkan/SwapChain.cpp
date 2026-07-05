@@ -1,19 +1,24 @@
 #include "gfx/backend/vulkan/SwapChain.hpp"
-#include "gfx/backend/vulkan/DeviceVK.hpp"
+#include "gfx/backend/vulkan/Device.hpp"
+#include "gfx/SwapChain.hpp"
 
 #include "pch.hpp"
 
 namespace gfx::vk 
 {
-    SwapChain::SwapChain(DeviceVK& device, VkExtent2D extent) : device(device), windowExtent{ extent } 
+    SwapChain::SwapChain(DeviceVK& device, VkExtent2D extent, PresentMode mode) : 
+        device(device), 
+        windowExtent{ extent },
+        presentMode{ mode }
     {
         init();
     }
 
-    SwapChain::SwapChain(DeviceVK& device, VkExtent2D windowExtent, std::shared_ptr<SwapChain> previous) : 
+    SwapChain::SwapChain(DeviceVK& device, VkExtent2D windowExtent, PresentMode mode, std::shared_ptr<SwapChain> previous) : 
         device(device),
         windowExtent{ windowExtent }, 
-        oldSwapChain{ previous } 
+        oldSwapChain{ previous },
+        presentMode{ mode }
     {
         init();
         oldSwapChain.reset();
@@ -402,23 +407,26 @@ namespace gfx::vk
         return availableFormats[0];
     }
 
-    VkPresentModeKHR SwapChain::chooseSwapPresentMode(
-        const std::vector<VkPresentModeKHR>& availablePresentModes) {
-        //for (const auto& availablePresentMode : availablePresentModes) {
-        //    if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-        //        std::cout << "Present mode: Mailbox" << std::endl;
-        //        return availablePresentMode;
-        //    }
-        //}
-
+    VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) 
+    {
         for (const auto &availablePresentMode : availablePresentModes) {
-          if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
-            std::cout << "Present mode: Immediate" << std::endl;
+          if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR && presentMode == PresentMode::FIFO) 
+          {
+            std::cout << "Present mode: FIFO" << std::endl;
+            return availablePresentMode;
+          }
+          else if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR && presentMode == PresentMode::Immediate) 
+          {
+            std::cout << "Present mode: IMMEDIATE" << std::endl;
+            return availablePresentMode;
+          }
+          else if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR && presentMode == PresentMode::Mailbox) 
+          {
+            std::cout << "Present mode: IMMEDIATE" << std::endl;
             return availablePresentMode;
           }
         }
 
-        //std::cout << "Present mode: V-Sync" << std::endl;
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 

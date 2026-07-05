@@ -14,7 +14,7 @@ BackendVK::BackendVK(Window* windowInstance) :
 
 BackendVK::~BackendVK()
 {
-    
+   vkDeviceWaitIdle(device.device()); 
 }
 
 }

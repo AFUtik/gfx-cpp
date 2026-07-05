@@ -7,8 +7,11 @@ struct Window;
 namespace gfx::vk {
 
 struct WindowVK {
-    WindowVK(Window* window) : window(window) {};
+    WindowVK(Window* window);
     ~WindowVK() = default;
+
+    WindowVK(const WindowVK&) = delete;
+    WindowVK& operator=(const WindowVK&) = delete;
 
     void createWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
 	VkExtent2D getExtent();

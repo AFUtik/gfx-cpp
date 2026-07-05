@@ -1,5 +1,5 @@
-#include "gfx/backend/vulkan/DeviceVK.hpp"
-#include "gfx/backend/vulkan/WindowVK.hpp"
+#include "gfx/backend/vulkan/Device.hpp"
+#include "gfx/backend/vulkan/Window.hpp"
 #include "gfx/backend/vulkan/Buffer.hpp"
 #include "gfx/backend/vulkan/Descriptors.hpp"
 

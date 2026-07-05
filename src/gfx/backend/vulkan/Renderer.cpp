@@ -1,8 +1,8 @@
 #include "gfx/backend/vulkan/Renderer.hpp"
-#include "gfx/backend/vulkan/DeviceVK.hpp"
+#include "gfx/backend/vulkan/Device.hpp"
 #include "gfx/backend/vulkan/SwapChain.hpp"
 #include "gfx/backend/vulkan/Descriptors.hpp"
-#include "gfx/backend/vulkan/WindowVK.hpp"
+#include "gfx/backend/vulkan/Window.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -54,11 +54,11 @@ void RendererVK::recreateSwapChain() {
 	vkDeviceWaitIdle(device.device());
 	
 	if (swapchain == nullptr) {
-		swapchain = std::make_unique<SwapChain>(device, extent);
+		swapchain = std::make_unique<SwapChain>(device, extent, PresentMode::FIFO);
 	}
 	else {
 		std::shared_ptr<SwapChain> oldSwapChain = std::move(swapchain);
-		swapchain = std::make_unique<SwapChain>(device, extent, oldSwapChain);
+		swapchain = std::make_unique<SwapChain>(device, extent, PresentMode::FIFO, oldSwapChain);
 
 		if (!oldSwapChain->compareSwapFormats(*swapchain.get())) {
 			throw std::runtime_error("Swap chain image(or depth) format has changed");
@@ -75,13 +75,13 @@ void RendererVK::freeCommandBuffers() {
 	commandBuffers.clear();
 }
 
-void RendererVK::beginFrame() {
+Frame& RendererVK::beginFrame() {
 	assert(!isFrameStarted && "Can't call beginFrame while already in progress");
 	auto result = swapchain->acquireNextImage(&currentImageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		recreateSwapChain();
-		return;
+		return frame;
 	}
 
 	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -98,8 +98,8 @@ void RendererVK::beginFrame() {
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
 	
-	frame.commandBuffer = commandBuffer;
-	frame.frameIndex = currentFrameIndex;
+	frame.cmdBuf     = reinterpret_cast<CommandBuffer*>(commandBuffer);
+	frame.imageIndex = currentFrameIndex;
 }
 
 void RendererVK::endFrame() {

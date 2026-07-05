@@ -19,19 +19,10 @@ enum class BlendMode
 
 struct ColorTargetDesc
 {   
-    ImageFormat format;
     BlendMode blend;
     bool writeColor = true;
     bool writeAlpha = true;
-    uint32_t width;
-    uint32_t height;
-};
-
-struct DepthTargetDesc
-{
-    ImageFormat format;
-    uint32_t width;
-    uint32_t height;
+    ImageDesc imageDesc;
 };
 
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FrameInfo.hpp"
+#include "gfx/IRenderer.hpp"
 
 #include "pch.hpp"
 
@@ -17,7 +17,7 @@ namespace gfx::vk {
     struct WindowVK;
 	struct DeviceVK;
 
-	class RendererVK {
+	class RendererVK : public Renderer {
 	public:
 		RendererVK(DeviceVK& device, WindowVK& window);
 		~RendererVK();
@@ -41,13 +41,11 @@ namespace gfx::vk {
 			return currentFrameIndex; 
 		}
 
-		void beginFrame();
-		void endFrame();
+		Frame& beginFrame() override;
+		void   endFrame()   override;
 
 		void beginSwapChainRenderPass();
 		void endSwapChainRenderPass  ();
-
-		FrameInfo& frameInfo() {return frame;}
 	private:
 		void createCommandBuffers();
 		void recreateSwapChain();
@@ -56,7 +54,7 @@ namespace gfx::vk {
 		DeviceVK& device;
 		WindowVK& window;
 
-		FrameInfo frame;
+		Frame frame;
 
 		std::unique_ptr<SwapChain> swapchain;
 

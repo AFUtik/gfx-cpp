@@ -6,7 +6,7 @@
  */
 
 #include "gfx/backend/vulkan/Buffer.hpp"
-#include "gfx/backend/vulkan/DeviceVK.hpp"
+#include "gfx/backend/vulkan/Device.hpp"
 
 #include "pch.hpp"
 

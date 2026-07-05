@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gfx/SwapChain.hpp"
 #include <vulkan/vulkan.h> 
 
 #include "pch.hpp"
@@ -10,12 +11,13 @@ using VmaAllocation = VmaAllocation_T*;
 namespace gfx::vk {
     struct DeviceVK;
 
-    struct SwapChain {
+    struct SwapChain 
+    {
         static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
-        SwapChain(DeviceVK& device, VkExtent2D windowExtent);
-        SwapChain(DeviceVK& device, VkExtent2D windowExtent, std::shared_ptr<SwapChain> previous);
-        ~SwapChain();
+        SwapChain(DeviceVK& device, VkExtent2D windowExtent, PresentMode mode);
+        SwapChain(DeviceVK& device, VkExtent2D windowExtent, PresentMode mode, std::shared_ptr<SwapChain> previous);
+        ~SwapChain();   
 
         void init();
 
@@ -74,6 +76,7 @@ namespace gfx::vk {
 
         std::shared_ptr<SwapChain> oldSwapChain;
 
+        PresentMode presentMode;
         VkExtent2D windowExtent;
 
         VkSwapchainKHR swapChain;

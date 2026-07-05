@@ -1,5 +1,5 @@
 #include "gfx/backend/vulkan/Descriptors.hpp"
-#include "gfx/backend/vulkan/DeviceVK.hpp"
+#include "gfx/backend/vulkan/Device.hpp"
 
 namespace gfx::vk 
 {
@@ -53,7 +53,7 @@ DescriptorSetLayout::DescriptorSetLayout(DeviceVK &device, std::unordered_map<ui
 DescriptorSetLayout::~DescriptorSetLayout() {
   if (descriptorSetLayout == VK_NULL_HANDLE) return;
 
-  //device.free<DescriptorSetLayout>(this);
+  device.free<DescriptorSetLayout>(this);
   
   descriptorSetLayout = VK_NULL_HANDLE;
 }
@@ -93,7 +93,7 @@ DescriptorPoolManager::DescriptorPoolManager(
 }
  
 DescriptorPoolManager::~DescriptorPoolManager() {
-  //device.free<DescriptorPoolManager>(this);
+  device.free<DescriptorPoolManager>(this);
 }
 
 void DescriptorPoolManager::allocateNewPool() {

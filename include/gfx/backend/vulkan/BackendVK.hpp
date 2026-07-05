@@ -2,8 +2,8 @@
 
 #include "gfx/IDevice.hpp"
 
-#include "WindowVK.hpp"
-#include "DeviceVK.hpp"
+#include "Window.hpp"
+#include "Device.hpp"
 #include "Renderer.hpp"
 
 struct Window;
