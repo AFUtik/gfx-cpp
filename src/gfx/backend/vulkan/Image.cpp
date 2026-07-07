@@ -1,7 +1,7 @@
 #include "gfx/backend/vulkan/Image.hpp"
 #include "gfx/backend/vulkan/Device.hpp"
 #include "gfx/backend/vulkan/Buffer.hpp"
-#include "gfx/backend/vulkan/Map.hpp"
+#include "gfx/backend/vulkan/Convert.hpp"
 
 namespace gfx::vk {
 
@@ -37,55 +37,97 @@ int GetBytesPerTexFormat(VkFormat Format)
 	return 0;
 }
 
+SamplerVK::SamplerVK(DeviceVK& device, const SamplerDesc& desc) : device(device)
+{
+    VkFilter MinFilter;
+    VkFilter MaxFilter;
+    MinFilter = VK_FILTER_NEAREST;
+    MaxFilter = VK_FILTER_NEAREST;
+    VkSamplerAddressMode AddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    createTextureSampler(sampler, MinFilter, MaxFilter, AddressMode);
+}
+
+SamplerVK::~SamplerVK()
+{
+    if(!sampler) return;
+
+    device.getDeletionQueue().push_function([sampler = this->sampler, device = this->device.device()] {
+        vkDestroySampler(device, sampler, nullptr);
+    });
+}
+
+void SamplerVK::createTextureSampler(VkSampler& sampler, VkFilter MinFilter, VkFilter MaxFilter, VkSamplerAddressMode AddressMode)
+{
+	VkSamplerCreateInfo SamplerInfo = {
+		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.magFilter = MinFilter,
+		.minFilter = MaxFilter,
+		.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+		.addressModeU = AddressMode,
+		.addressModeV = AddressMode,
+		.addressModeW = AddressMode,
+		.mipLodBias = 0.0f,
+		.anisotropyEnable = VK_FALSE,
+		.maxAnisotropy = 1,
+		.compareEnable = VK_FALSE,
+		.compareOp = VK_COMPARE_OP_ALWAYS,
+		.minLod = 0.0f,
+		.maxLod = 0.0f,
+		.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+		.unnormalizedCoordinates = VK_FALSE
+	};
+    if(vkCreateSampler(device.device(), &SamplerInfo, VK_NULL_HANDLE, &sampler) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create image sampler");
+    } 
+}
+
+ImageVK::ImageVK(DeviceVK& device, VkImage vkImage, VkImageView vkImageView) :
+    device(device),
+    image(vkImage),
+    view(vkImageView) {}
+
 ImageVK::ImageVK(DeviceVK& device, const ImageDesc& desc) : 
     device(device),
     imageWidth(desc.width),
     imageHeight(desc.height),
-    channels(desc.channels),
-    format(static_cast<VkFormat>(toVKFormat(desc.format)))
+    format(vk_convert::ToVk(desc.format))
 {
-    if(imageWidth!=0 && imageHeight!=0 && channels!=0)
+    if(imageWidth!=0 && imageHeight!=0)
     {
         createImage();
 
         VkImageAspectFlags AspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
     	createImageView(AspectFlags);
-    
-        VkFilter MinFilter;
-        VkFilter MaxFilter;
-        MinFilter = VK_FILTER_NEAREST;
-        MaxFilter = VK_FILTER_NEAREST;
-        VkSamplerAddressMode AddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        createTextureSampler(sampler, MinFilter, MaxFilter, AddressMode);
     }
 }
 
 ImageVK::~ImageVK() {
-	if(image != VK_NULL_HANDLE) device.free<ImageVK>(this);
+    if(!vmaAllocation) return;
+
+    struct DeletionInfo {
+        VkImageView view;
+        VkImage image;
+        VmaAllocation allocation;
+    };
+    device.getDeletionQueue().push_function(
+        [
+            info = DeletionInfo{view, image, vmaAllocation}, 
+            device = this->device.device(), 
+            allocator = device.getVmaAllocator()]
+        {
+            vkDestroyImageView(device, info.view, nullptr);
+            vmaDestroyImage(allocator, info.image, info.allocation);
+        }
+    );
+
 }
 
 void ImageVK::write(const uint8_t* pixels) 
 {
 	int LayerCount = isCubemap ? 6 : 1;
 	updateTextureImage(LayerCount, pixels);
-}
-
-void ImageVK::setImageFilter(gfx::ImageFilter filter)
-{
-	VkFilter MinFilter;
-	VkFilter MaxFilter;
-	if(filter == gfx::ImageFilter::LINEAR)
-	{
-		MinFilter = VK_FILTER_LINEAR;
-		MaxFilter = VK_FILTER_LINEAR;
-	}
-	if(filter == gfx::ImageFilter::NEAREST)
-	{
-		MinFilter = VK_FILTER_NEAREST;
-		MaxFilter = VK_FILTER_NEAREST;
-	}
-	VkSamplerAddressMode AddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	createTextureSampler(sampler, MinFilter, MaxFilter, AddressMode);
 }
 
 void ImageVK::createImage()
@@ -145,33 +187,6 @@ void ImageVK::updateTextureImage(int layerCount, const void* pPixels)
 	imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
-void ImageVK::createTextureSampler(VkSampler& sampler, VkFilter MinFilter, VkFilter MaxFilter, VkSamplerAddressMode AddressMode)
-{
-	VkSamplerCreateInfo SamplerInfo = {
-		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.magFilter = MinFilter,
-		.minFilter = MaxFilter,
-		.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-		.addressModeU = AddressMode,
-		.addressModeV = AddressMode,
-		.addressModeW = AddressMode,
-		.mipLodBias = 0.0f,
-		.anisotropyEnable = VK_FALSE,
-		.maxAnisotropy = 1,
-		.compareEnable = VK_FALSE,
-		.compareOp = VK_COMPARE_OP_ALWAYS,
-		.minLod = 0.0f,
-		.maxLod = 0.0f,
-		.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
-		.unnormalizedCoordinates = VK_FALSE
-	};
-    if(vkCreateSampler(device.device(), &SamplerInfo, VK_NULL_HANDLE, &sampler) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create image sampler");
-    } 
-}
-
 void ImageVK::createImageView(VkImageAspectFlags AspectFlags) 
 {
 	VkImageViewCreateInfo viewInfo =
@@ -190,6 +205,8 @@ void ImageVK::createImageView(VkImageAspectFlags AspectFlags)
 			.layerCount = isCubemap ? 6u : 1u
 		}
 	};
+
+    int channels = GetBytesPerTexFormat(format);
 
 	// Managing image view channels //
 	if(channels == 4 || channels == 3) {
@@ -231,7 +248,7 @@ void ImageVK::createImageView(VkImageAspectFlags AspectFlags)
 			vmaAllocation, 
 			info, 
 			this,
-			imageWidth*imageHeight*channels
+			imageWidth*imageHeight*GetBytesPerTexFormat(format)
 		);
 	}
 	#endif

@@ -1,8 +1,10 @@
-#include "gfx/backend/vulkan/SwapChain.hpp"
+#include "gfx/backend/vulkan/Swapchain.hpp"
 #include "gfx/backend/vulkan/Device.hpp"
 #include "gfx/SwapChain.hpp"
+#include "gfx/Frame.hpp"
 
 #include "pch.hpp"
+#include <vulkan/vulkan_core.h>
 
 namespace gfx::vk 
 {
@@ -29,13 +31,55 @@ namespace gfx::vk
 
         createSwapChain();
         createImageViews();
-        createRenderPass();
+        swapChainImagesVK.reserve(MAX_FRAMES_IN_FLIGHT);
+        for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+            swapChainImagesVK.emplace_back(
+                    device, 
+                    swapChainImages[i], 
+                    swapChainImageViews[i]);
+
         createDepthResources();
+        depthImagesVK.reserve(MAX_FRAMES_IN_FLIGHT);
+        for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+            depthImagesVK.emplace_back(
+                    device, 
+                    depthImages[i], 
+                    depthImageViews[i]);
+
+        createRenderPass();
         createFramebuffers();
         createSyncObjects();
 
+        VkCommandBuffer cmdBuf = device.beginSingleTimeCommands();
+        for(int i = 0; i < imageCount(); i++) 
+        {
+            device.transitionImageLayout2(
+                cmdBuf,
+                swapChainImages[i],
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                VK_IMAGE_ASPECT_COLOR_BIT);
+            device.transitionImageLayout2(
+                cmdBuf,
+                depthImages[i],
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                VK_IMAGE_ASPECT_DEPTH_BIT);
+        }
+        device.endSingleTimeCommands(cmdBuf);
+
         device.createDeletionQueues(MAX_FRAMES_IN_FLIGHT);
     }
+
+    Image& SwapChain::getImage     (Frame& frame)
+    {
+        return swapChainImagesVK[frame.imageIndex];
+    };
+
+    Image& SwapChain::getDepthImage(Frame& frame)
+    {
+        return depthImagesVK[frame.imageIndex];
+    };
 
     SwapChain::~SwapChain() {
         vkDeviceWaitIdle(device.device()); 

@@ -1,6 +1,6 @@
 #include "gfx/backend/vulkan/Renderer.hpp"
 #include "gfx/backend/vulkan/Device.hpp"
-#include "gfx/backend/vulkan/SwapChain.hpp"
+#include "gfx/backend/vulkan/Swapchain.hpp"
 #include "gfx/backend/vulkan/Descriptors.hpp"
 #include "gfx/backend/vulkan/Window.hpp"
 
@@ -98,8 +98,9 @@ Frame& RendererVK::beginFrame() {
 		throw std::runtime_error("failed to begin recording command buffer!");
 	}
 	
-	frame.cmdBuf     = reinterpret_cast<CommandBuffer*>(commandBuffer);
+	frame.cmdBuf     = reinterpret_cast<CommandBuffer>(commandBuffer);
 	frame.imageIndex = currentFrameIndex;
+    return frame;
 }
 
 void RendererVK::endFrame() {
@@ -121,46 +122,91 @@ void RendererVK::endFrame() {
 	isFrameStarted = false;
 	currentFrameIndex = (currentFrameIndex + 1) % SwapChain::MAX_FRAMES_IN_FLIGHT;
 
-	frame.commandBuffer = VK_NULL_HANDLE;
+	frame.cmdBuf = VK_NULL_HANDLE;
 	
 }
 
-void RendererVK::beginSwapChainRenderPass() {
-	assert(isFrameStarted && "Can't call beginSwapChainRenderPass while already in progress");
-	assert(frame.commandBuffer == getCurrentCommandBuffer() && "can't begin render pass on command buffer from a different frame");
+void RendererVK::beginRendering() 
+{
+    VkCommandBuffer commandBuffer =
+        reinterpret_cast<VkCommandBuffer>(frame.cmdBuf);
 
-	VkRenderPassBeginInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = swapchain->getRenderPass();
-	renderPassInfo.framebuffer = swapchain->getFrameBuffer(currentImageIndex);
+    device.transitionImageLayout2(
+            commandBuffer,
+            swapchain->getImage(currentImageIndex),
+            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            VK_IMAGE_ASPECT_COLOR_BIT);
 
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = swapchain->getSwapChainExtent();
+    assert(isFrameStarted);
+    assert(commandBuffer == getCurrentCommandBuffer());
 
-	std::array<VkClearValue, 2> clearValues{};
-	clearValues[0].color = { 0.1f, 0.1f, 0.1f, 1.0f };
-	clearValues[1].depthStencil = { 1.0f, 0 };
-	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-	renderPassInfo.pClearValues = clearValues.data();
+    VkRenderingAttachmentInfo colorAttachment{};
+    colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+    colorAttachment.imageView = swapchain->getImageView(currentImageIndex);
+    colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-	vkCmdBeginRenderPass(frame.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    colorAttachment.loadOp  = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(swapchain->getSwapChainExtent().width);
-	viewport.height = static_cast<float>(swapchain->getSwapChainExtent().height);
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	VkRect2D scissor{ {0, 0}, swapchain->getSwapChainExtent() };
-	vkCmdSetViewport(frame.commandBuffer, 0, 1, &viewport);
-	vkCmdSetScissor(frame.commandBuffer, 0, 1, &scissor);
+    colorAttachment.clearValue.color = {{0.1f, 0.1f, 0.1f, 1.0f}};
+
+    VkRenderingAttachmentInfo depthAttachment{};
+    depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+    depthAttachment.imageView = swapchain->getDepthImageView(currentImageIndex);
+    depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+    depthAttachment.clearValue.depthStencil = {1.0f, 0};
+
+    VkRenderingInfo renderingInfo{};
+    renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+
+    renderingInfo.renderArea.offset = {0, 0};
+    renderingInfo.renderArea.extent = swapchain->getSwapChainExtent();
+
+    renderingInfo.layerCount = 1;
+
+    renderingInfo.colorAttachmentCount = 1;
+    renderingInfo.pColorAttachments = &colorAttachment;
+
+    renderingInfo.pDepthAttachment = &depthAttachment;
+    renderingInfo.pStencilAttachment = nullptr;
+
+    vkCmdBeginRendering(commandBuffer, &renderingInfo);
+
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(swapchain->getSwapChainExtent().width);
+    viewport.height = static_cast<float>(swapchain->getSwapChainExtent().height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = swapchain->getSwapChainExtent();
+
+    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
-void RendererVK::endSwapChainRenderPass() {
+void RendererVK::endRendering() { 
+    VkCommandBuffer commandBuffer = reinterpret_cast<VkCommandBuffer>(frame.cmdBuf);
+
 	assert(isFrameStarted && "Can't call endSwapChainRenderPass while already in progress");
-	assert(frame.commandBuffer == getCurrentCommandBuffer() && "can't end render pass on command buffer from a different frame");
-	vkCmdEndRenderPass(frame.commandBuffer);
+	assert(commandBuffer == getCurrentCommandBuffer() && "can't end render pass on command buffer from a different frame");
+
+	vkCmdEndRendering(commandBuffer);
+
+    device.transitionImageLayout2(
+            commandBuffer,
+            swapchain->getImage(currentImageIndex),
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 }

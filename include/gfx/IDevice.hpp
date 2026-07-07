@@ -20,7 +20,6 @@ struct Buffer;
 struct Mesh;
 struct Image;
 
-struct PipelineState;
 struct PipelineLayout;
 struct RenderPipeline;
 
@@ -41,8 +40,7 @@ struct Device
     virtual Handle<Image>          createImage (const ImageDesc& desc)  = 0;
     virtual Handle<Buffer>         createBuffer(const BufferDesc& desc) = 0;
 
-    virtual Handle<MeshDesc>       meshDescHandle(const MeshDesc& desc)   = 0;
-    virtual Handle<Mesh>           createMesh    (Handle<MeshDesc>& desc) = 0;
+    virtual Handle<Mesh>           createMesh    (const MeshDesc& desc) = 0;
 
     virtual Handle<Shader>         createShader(const ShaderDesc& desc) = 0;
 
@@ -50,7 +48,6 @@ struct Device
     virtual Handle<BindGroupLayout> createBindGroupLayout (const BindGroupLayoutDesc& desc) = 0;
     virtual Handle<Framebuffer>     createFramebuffer     (const FramebufferDesc& desc) = 0;
     virtual Handle<RenderPass>      createRenderPass      (const RenderPassDesc&  desc) = 0;
-    virtual Handle<PipelineState>   createPipelineState   () = 0;
     virtual Handle<PipelineLayout>  createPipelineLayout  (const PipelineLayoutDesc& desc) = 0;
     virtual Handle<RenderPipeline>  createRenderPipeline  (const RenderPipelineDesc& decs) = 0;
 

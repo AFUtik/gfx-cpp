@@ -116,15 +116,22 @@ namespace gfx::vk {
             VkImageLayout OldLayout, 
             VkImageLayout NewLayout, 
             int LayerCount);
+
+        void transitionImageLayout2(
+            VkCommandBuffer cmd, 
+            VkImage image,
+                                
+            VkImageLayout oldLayout, 
+            VkImageLayout newLayout,
+            VkImageAspectFlags aspectMask);
             
         void createDeletionQueues(uint64_t amount);
-            
+        DeletionQueue& getDeletionQueue() {return deletionQueues[frame_index];};
         void freeDeletionQueue(uint32_t index) {deletionQueues[index].flush();}
 
-        inline void setFrameIndex(uint32_t index) {frame_index = index;}
+        VmaAllocator getVmaAllocator() {return allocator_;}
 
-        // Device Allocation //
-        template <typename T> void free(T* resource);
+        inline void setFrameIndex(uint32_t index) {frame_index = index;}
 
         VkPhysicalDeviceProperties properties;
         

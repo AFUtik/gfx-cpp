@@ -8,7 +8,7 @@ struct Window;
 namespace gfx 
 {
 
-extern std::unique_ptr<Device> createOpenGLBackend(Window* windowInstance);
+//extern std::unique_ptr<Device> createOpenGLBackend(Window* windowInstance);
 extern std::unique_ptr<Device> createVulkanBackend(Window* windowInstance);
 
 }

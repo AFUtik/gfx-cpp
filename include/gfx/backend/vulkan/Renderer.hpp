@@ -44,8 +44,8 @@ namespace gfx::vk {
 		Frame& beginFrame() override;
 		void   endFrame()   override;
 
-		void beginSwapChainRenderPass();
-		void endSwapChainRenderPass  ();
+		void beginRendering();
+		void endRendering();
 	private:
 		void createCommandBuffers();
 		void recreateSwapChain();

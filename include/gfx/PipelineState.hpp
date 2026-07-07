@@ -193,7 +193,7 @@ struct DepthBiasState
 
 struct RasterState
 {
-    CullMode  cull      = CullMode::Front;
+    CullMode  cull      = CullMode::Back;
     FillMode  fill      = FillMode::Fill;
     FrontFace frontFace = FrontFace::CounterClockwise;
 

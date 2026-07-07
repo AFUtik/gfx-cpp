@@ -48,14 +48,24 @@ BufferVK::BufferVK(
 }
 
 BufferVK::~BufferVK() {
-  unmap();
+    unmap();
 
-  if (buffer == VK_NULL_HANDLE) return;
+    if (buffer == VK_NULL_HANDLE) return;
 
-  //device.free<Buffer>(this);
+    struct DeletionInfo {
+        VkBuffer buffer;
+        VmaAllocation allocation;
+    };
 
-  //vkDestroyBuffer(device.device(), buffer, nullptr);
-  //vkFreeMemory(device.device(), memory, nullptr);
+    device.getDeletionQueue().push_function(
+        [
+            info = DeletionInfo{buffer, vmaAllocation}, 
+            allocator = device.getVmaAllocator()
+        ] 
+        {
+             vmaDestroyBuffer(allocator, info.buffer, info.allocation);
+        }
+    );
 }
 
 /**

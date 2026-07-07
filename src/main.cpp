@@ -1,5 +1,11 @@
 #include "gfx/Backend.hpp"
+#include "gfx/IBuffer.hpp"
+#include "gfx/IMesh.hpp"
+#include "gfx/IShader.hpp"
+#include "gfx/PipelineLayout.hpp"
 #include "gfx/Vertex.hpp"
+#include "gfx/PipelineState.hpp"
+#include "gfx/RenderPipeline.hpp"
 
 #include "gfx/backend/vulkan/BackendVK.hpp"
 #include "thirdparties/stb_image.h" 
@@ -17,7 +23,25 @@ struct Texture
     int32_t channels;
 };
 
+std::vector<char> readFile(const std::string& filepath) {
+    std::ifstream file{ filepath, std::ios::ate | std::ios::binary };
+
+    if (!file.is_open()) {
+        throw std::runtime_error("failed to open file: " + filepath);
+    }
+
+    size_t fileSize = static_cast<size_t>(file.tellg());
+    std::vector<char> buffer(fileSize);
+
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+
+    file.close();
+    return buffer;
+}
+
 const std::string absPath = "/home/afutik/code/cplusplus/GFX/";
+const std::string resPath = "/home/afutik/code/cplusplus/GFX/resources/";
 
 int main() {
     Window windowInstance;
@@ -27,6 +51,43 @@ int main() {
 
     auto device = gfx::createVulkanBackend(&windowInstance);
     gfx::vk::BackendVK* vk = reinterpret_cast<gfx::vk::BackendVK*>(device.get());
+    
+    std::vector<char> vertShaderSpirv = readFile(resPath+"shaders/vk/shader.vert.spv");
+    std::vector<char> fragShaderSpirv = readFile(resPath+"shaders/vk/shader.frag.spv");
+
+    gfx::Handle<gfx::Shader> vertShader = device->createShader(gfx::ShaderDesc{
+                .name       = "Vertex Shader",
+                .spirv      = reinterpret_cast<const uint32_t*>(vertShaderSpirv.data()),
+                .spirv_size = vertShaderSpirv.size(),
+                .glsl       = "",
+                .stage      = gfx::ShaderStage::Vertex
+            });
+
+    gfx::Handle<gfx::Shader> fragShader = device->createShader(gfx::ShaderDesc{
+                .name       = "Fragment Shader",
+                .spirv      = reinterpret_cast<const uint32_t*>(fragShaderSpirv.data()),
+                .spirv_size = fragShaderSpirv.size(),
+                .glsl       = "",
+                .stage      = gfx::ShaderStage::Fragment
+            });  
+
+    gfx::Handle<gfx::PipelineLayout> pipelineLayout = device->createPipelineLayout(gfx::PipelineLayoutDesc{
+                .layouts = {}
+            });
+
+    gfx::RenderPipelineDesc pipelineDesc {
+        .vertexState = gfx::VertexState {
+            .module = vertShader,
+            .layout = gfx::Vertex::getLayout()
+        },
+        .fragState = gfx::FragmentState {
+            .module = fragShader
+        },
+        .pipelineState  = {},
+        .pipelineLayout = pipelineLayout
+    };
+
+    gfx::Handle<gfx::RenderPipeline> pipeline = device->createRenderPipeline(pipelineDesc);
 
     Events::init(&windowInstance);
     // BindGroup
@@ -44,10 +105,10 @@ int main() {
     );
 
     std::vector<gfx::Vertex> vertices = {
-        gfx::Vertex{{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
-        gfx::Vertex{{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}},
-        gfx::Vertex{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}},
-        gfx::Vertex{{-0.5f,  0.5f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
+        gfx::Vertex{{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+        gfx::Vertex{{ 0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+        gfx::Vertex{{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+        gfx::Vertex{{-0.5f,  0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
     };
 
     std::vector<uint32_t> indices = {
@@ -55,17 +116,27 @@ int main() {
         1, 2, 3
     };
 
+    gfx::Handle<gfx::Mesh> mesh = device->createMesh(gfx::MeshDesc{
+                .layout = gfx::Vertex::getLayout(),
+                .indexStride = sizeof(uint32_t),
+                .bufferUsage = gfx::BufferUsage::Static
+            });
+    mesh->updateVertices(vertices.data(), vertices.size());
+    mesh->updateIndexes(indices.data(), indices.size());
+
     while (!windowInstance.isShouldClose()) {
         if(Events::jpressed(GLFW_KEY_ESCAPE))
         {
             return 0;
         }
 
-        vk->renderer.beginFrame();
+        gfx::Frame& frame = vk->renderer.beginFrame();
+        vk->renderer.beginRendering();
 
-        vk->renderer.beginSwapChainRenderPass();
-        vk->renderer.endSwapChainRenderPass();
+        pipeline->bind(frame.cmdBuf);
+        mesh->draw(frame.cmdBuf);
 
+        vk->renderer.endRendering();
         vk->renderer.endFrame();
 
         windowInstance.swapBuffers();

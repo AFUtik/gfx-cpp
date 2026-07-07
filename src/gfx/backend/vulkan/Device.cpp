@@ -1,7 +1,5 @@
 #include "gfx/backend/vulkan/Device.hpp"
 #include "gfx/backend/vulkan/Window.hpp"
-#include "gfx/backend/vulkan/Buffer.hpp"
-#include "gfx/backend/vulkan/Descriptors.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -9,6 +7,52 @@ bool HasStencilComponent(VkFormat Format)
 {
 	return ((Format == VK_FORMAT_D32_SFLOAT_S8_UINT) || 
 		    (Format == VK_FORMAT_D24_UNORM_S8_UINT));
+}
+
+struct AccessInfo {
+    VkPipelineStageFlags2 stage;
+    VkAccessFlags2        access;
+};
+
+AccessInfo getAccessInfo(VkImageLayout layout)
+{
+    switch (layout) {
+        case VK_IMAGE_LAYOUT_UNDEFINED:
+            return { VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_ACCESS_2_NONE };
+
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            return { VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT };
+
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            return { VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_READ_BIT };
+
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            return { VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                     VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT };
+
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            return { VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                     VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT };
+
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+            return { VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                     VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT };
+
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            return { VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                     VK_ACCESS_2_SHADER_READ_BIT };
+
+        case VK_IMAGE_LAYOUT_GENERAL:
+            return { VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                     VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT };
+
+        case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+            return { VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, VK_ACCESS_2_NONE };
+
+        default:
+            return { VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                     VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT };
+    }
 }
 
 namespace gfx::vk {
@@ -75,7 +119,6 @@ namespace gfx::vk {
         for (DeletionQueue& queue : deletionQueues) queue.flush();
 
         vkDestroyCommandPool(device_, commandPool, nullptr);
-
         vmaDestroyAllocator(allocator_);
 
         vkDestroyDevice(device_, nullptr);
@@ -85,7 +128,6 @@ namespace gfx::vk {
         }
 
         vkDestroySurfaceKHR(instance_, surface_, nullptr);
-
         vkDestroyInstance(instance_, nullptr);
     }
 
@@ -100,7 +142,7 @@ namespace gfx::vk {
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pEngineName = "No Engine";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_0;
+        appInfo.apiVersion = VK_API_VERSION_1_3;
 
         VkInstanceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -156,10 +198,8 @@ namespace gfx::vk {
 
     void DeviceVK::createLogicalDevice() {
         QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily, indices.presentFamily };
-
         float queuePriority = 1.0f;
         for (uint32_t queueFamily : uniqueQueueFamilies) {
             VkDeviceQueueCreateInfo queueCreateInfo = {};
@@ -173,18 +213,26 @@ namespace gfx::vk {
         VkPhysicalDeviceFeatures deviceFeatures = {};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
 
+        // --- Synchronization2 feature ---
+        VkPhysicalDeviceSynchronization2Features sync2Features{};
+        sync2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
+        sync2Features.synchronization2 = VK_TRUE;
+
+        // --- Dynamic rendering feature, chained после sync2 ---
+        VkPhysicalDeviceDynamicRenderingFeatures dynamicRendering{};
+        dynamicRendering.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+        dynamicRendering.dynamicRendering = VK_TRUE;
+        dynamicRendering.pNext = &sync2Features;
+
         VkDeviceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
         createInfo.pEnabledFeatures = &deviceFeatures;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+        createInfo.pNext = &dynamicRendering; // dynamicRendering -> sync2Features
 
-        // might not really be necessary anymore because device specific validation layers
-        // have been deprecated
         if (enableValidationLayers) {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
             createInfo.ppEnabledLayerNames = validationLayers.data();
@@ -196,7 +244,6 @@ namespace gfx::vk {
         if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device_) != VK_SUCCESS) {
             throw std::runtime_error("failed to create logical device!");
         }
-
         vkGetDeviceQueue(device_, indices.graphicsFamily, 0, &graphicsQueue_);
         vkGetDeviceQueue(device_, indices.presentFamily, 0, &presentQueue_);
     }
@@ -756,6 +803,45 @@ namespace gfx::vk {
         endSingleTimeCommands(m_copyCmdBuf);
     }
 
+    void DeviceVK::transitionImageLayout2(
+        VkCommandBuffer cmd, 
+        VkImage image,
+        VkImageLayout oldLayout,
+        VkImageLayout newLayout,
+        VkImageAspectFlags aspectMask)
+    {
+        const AccessInfo src = getAccessInfo(oldLayout);
+        const AccessInfo dst = getAccessInfo(newLayout);
+
+        VkImageMemoryBarrier2 barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+
+        barrier.srcStageMask  = src.stage;
+        barrier.srcAccessMask = src.access;
+        barrier.dstStageMask  = dst.stage;
+        barrier.dstAccessMask = dst.access;
+
+        barrier.oldLayout = oldLayout;
+        barrier.newLayout = newLayout;
+
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+        barrier.image = image;
+        barrier.subresourceRange.aspectMask     = aspectMask;
+        barrier.subresourceRange.baseMipLevel   = 0;
+        barrier.subresourceRange.levelCount     = VK_REMAINING_MIP_LEVELS;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount     = VK_REMAINING_ARRAY_LAYERS;
+
+        VkDependencyInfo depInfo{};
+        depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        depInfo.imageMemoryBarrierCount = 1;
+        depInfo.pImageMemoryBarriers    = &barrier;
+
+        vkCmdPipelineBarrier2(cmd, &depInfo);
+    }
+
     void DeviceVK::createAllocator()
     {
         VmaAllocatorCreateInfo allocatorInfo = {};
@@ -773,44 +859,7 @@ namespace gfx::vk {
     }
 
     void DeviceVK::createDeletionQueues(uint64_t amount) {deletionQueues.resize(amount);}
-
     
-    template<>
-    void DeviceVK::free<BufferVK>(BufferVK* resource) 
-    {
-        struct DeletionInfo {
-            VkBuffer buffer;
-            VmaAllocation allocation;
-        };
-
-        deletionQueues[frame_index].push_function(
-            [info = DeletionInfo{resource->buffer, resource->vmaAllocation}, allocator = allocator_] {
-                vmaDestroyBuffer(allocator, info.buffer, info.allocation);
-            }
-        );
-    }
-
-    template<>
-    void DeviceVK::free<DescriptorSetLayout>(DescriptorSetLayout* resource) {
-        deletionQueues[frame_index].push_function(
-            [device = this->device_, layout = resource->descriptorSetLayout] {
-                vkDestroyDescriptorSetLayout(device, layout, nullptr);
-            }
-        );
-    }
-
-    template<>
-    void DeviceVK::free<DescriptorPoolManager>(DescriptorPoolManager* resource) {
-        deletionQueues[frame_index].push_function(
-            [device = this->device_, pools = resource->descriptorPools] {
-                for(VkDescriptorPool pool : pools) {
-                    if(pool == VK_NULL_HANDLE) continue;
-                    vkDestroyDescriptorPool(device, pool, nullptr);
-                }
-            }
-        );
-    }
-
     #ifndef NDEBUG
 
     void DeviceVK::createSetDebugNameFunc()

@@ -34,7 +34,7 @@ enum class StoreOp
 struct ColorAttachment
 {
     AttachmentType type    = AttachmentType::ATTACHMENT_TYPE_COLOR;
-    ImageFormat    format  = ImageFormat::RGBA8;
+    ImageFormat    format  = ImageFormat::RGBA8_SNORM;
     LoadOp         loadOp  = LoadOp::LOAD_OP;
     StoreOp        storeOp = StoreOp::STORE_OP;
 };

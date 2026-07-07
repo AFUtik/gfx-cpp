@@ -49,15 +49,20 @@ DescriptorSetLayout::DescriptorSetLayout(DeviceVK &device, std::unordered_map<ui
         //device.setDebugName((uint64_t)descriptorSetLayout, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, "");
     #endif
 }
- 
-DescriptorSetLayout::~DescriptorSetLayout() {
-  if (descriptorSetLayout == VK_NULL_HANDLE) return;
 
-  device.free<DescriptorSetLayout>(this);
-  
-  descriptorSetLayout = VK_NULL_HANDLE;
+DescriptorSetLayout::~DescriptorSetLayout() {
+    if (descriptorSetLayout == VK_NULL_HANDLE) return;
+
+    device.getDeletionQueue().push_function(
+        [device = this->device.device(), layout = descriptorSetLayout] 
+        {
+            vkDestroyDescriptorSetLayout(device, layout, nullptr);
+        }
+    );
+
+    descriptorSetLayout = VK_NULL_HANDLE;
 }
- 
+
 // *************** Descriptor Pool Builder *********************
  
 DescriptorPoolManager::Builder &DescriptorPoolManager::Builder::addPoolSize(
@@ -91,9 +96,21 @@ DescriptorPoolManager::DescriptorPoolManager(
     this->poolSizes = poolSizes;
     allocateNewPool();
 }
- 
-DescriptorPoolManager::~DescriptorPoolManager() {
-  device.free<DescriptorPoolManager>(this);
+
+DescriptorPoolManager::~DescriptorPoolManager() 
+{
+    device.getDeletionQueue().push_function(
+        [
+            device = this->device.device(), 
+            pools = descriptorPools
+        ] 
+        {
+            for(VkDescriptorPool pool : pools) {
+                if(pool == VK_NULL_HANDLE) continue;
+                    vkDestroyDescriptorPool(device, pool, nullptr);
+            }
+        }
+    );
 }
 
 void DescriptorPoolManager::allocateNewPool() {

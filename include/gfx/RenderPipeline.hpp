@@ -1,7 +1,6 @@
 #pragma once
 
 #include "PipelineState.hpp"
-
 #include "gfx/Vertex.hpp"
 
 namespace gfx 
@@ -9,6 +8,9 @@ namespace gfx
 
 struct ColorTarget;
 struct PipelineLayout;
+
+struct CommandBuffer_T;
+using CommandBuffer = CommandBuffer_T*; 
 
 struct VertexState
 {
@@ -19,21 +21,22 @@ struct VertexState
 struct FragmentState
 {
     Handle<Shader> module;
-    std::vector<Handle<ColorTarget>> targets;
 };
 
 struct RenderPipelineDesc
 {
     VertexState   vertexState;
     FragmentState fragState;
+    PipelineState  pipelineState;
 
-    Handle<PipelineState>  pipelineState;
     Handle<PipelineLayout> pipelineLayout;
 };
 
 struct RenderPipeline
 {
     RenderPipelineDesc descriptor;
+
+    virtual void bind(CommandBuffer) = 0;
 };
 
 }

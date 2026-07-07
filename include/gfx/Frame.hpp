@@ -3,12 +3,13 @@
 namespace gfx
 {
 
-struct CommandBuffer {};
+struct CommandBuffer_T {};
+using CommandBuffer = CommandBuffer_T*;
 
 struct Frame
 {
-    CommandBuffer* cmdBuf = nullptr;
-    int imageIndex        = 0;
+    CommandBuffer cmdBuf = nullptr;
+    int imageIndex       = 0;
 };
 
 }

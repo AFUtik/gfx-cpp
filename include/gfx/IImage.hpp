@@ -72,6 +72,15 @@ enum class ImageFormat
     Undefined
 };
 
+enum class ImageUsage : uint32_t
+{
+    ColorAttachment = 1 << 0,
+    DepthStencil    = 1 << 1,
+    Sampled         = 1 << 2,
+    TransferSrc     = 1 << 3,
+    TransferDst     = 1 << 4,
+};
+
 enum ImageFilter
 {
     LINEAR,
@@ -85,7 +94,7 @@ struct Image
     virtual void bind() = 0;
 
     virtual void write(const uint8_t* data) = 0;
-    virtual void setImageFilter(ImageFilter filter)  = 0;
+    virtual void setImageFilter(ImageFilter filter) {};
 
     virtual ~Image() = default;
 };
@@ -94,8 +103,17 @@ struct ImageDesc
 {
     uint32_t    width    = 0;
     uint32_t    height   = 0; 
-    ImageFilter filter;
     ImageFormat format;
+};
+
+struct SamplerDesc
+{
+    ImageFilter filter;
+};
+
+struct Sampler 
+{
+
 };
 
 }

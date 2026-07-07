@@ -1,16 +1,15 @@
 #pragma once
 
-#include "IDevice.hpp"
+#include "IBuffer.hpp"
 #include "Vertex.hpp"
+#include "Frame.hpp"
 
-namespace gfx 
+namespace gfx
 {
-
-struct Buffer;
 
 struct Mesh
 {
-    virtual void draw() = 0;
+    virtual void draw(CommandBuffer) = 0;
     virtual void draw(uint32_t instanceCount, uint32_t instanceOffset) = 0;
     
     virtual void updateVertices(const void* data, uint64_t count) = 0;
@@ -27,6 +26,8 @@ struct MeshDesc
 {
     VertexLayout layout;
     uint64_t     indexStride = 4;
+
+    BufferUsage  bufferUsage = BufferUsage::Static;
 };
 
 }
