@@ -49,10 +49,15 @@ namespace gfx::vk {
 
         const SwapchainDesc& getSwapchainDesc() {return swapchainDesc;}
 
-        VkImageView getImageView(int index) { return swapChainImageViews[index]; }
-        VkImageView getDepthImageView(int index) { return depthImageViews[index]; }
-        VkImage     getImage(int index) {return swapChainImages[index];  }
-        VkImage     getDepthImage(int index) {return depthImages[index]; }
+        VkImageView   getImageView(int index)   { return swapChainImageViews[index]; }
+        VkImage       getImage(int index)       { return swapChainImages[index];  }
+        VkImageLayout getImageLayout(int index) {return swapChainImageLayouts[index]; }
+        void          setImageLayout(int index, VkImageLayout layout) {swapChainImageLayouts[index] = layout;}
+
+        VkImageView   getDepthImageView(int index) { return depthImageViews[index]; }
+        VkImage       getDepthImage(int index) {return depthImages[index]; }
+        VkImageLayout getDepthImageLayout(int index) {return depthImageLayouts[index];}
+        void          setDepthImageLayout(int index, VkImageLayout layout) {depthImageLayouts[index] = layout;}
  
         Image& getImage     (Frame& frame) override;
         Image& getDepthImage(Frame& frame) override;
@@ -77,15 +82,17 @@ namespace gfx::vk {
 
         std::vector<VkFramebuffer> swapChainFramebuffers;
         VkRenderPass renderPass;
-
+    
+        std::vector<VkImageLayout> depthImageLayouts;
         std::vector<VkImage>       depthImages;
         std::vector<VkImageView>   depthImageViews;
         std::vector<VmaAllocation> depthImageAllocs;
         std::vector<ImageVK>       depthImagesVK;
-
-        std::vector<VkImage>     swapChainImages;
-        std::vector<VkImageView> swapChainImageViews;
-        std::vector<ImageVK>     swapChainImagesVK;
+        
+        std::vector<VkImageLayout> swapChainImageLayouts;
+        std::vector<VkImage>       swapChainImages;
+        std::vector<VkImageView>   swapChainImageViews;
+        std::vector<ImageVK>       swapChainImagesVK;
 
         std::shared_ptr<SwapChain> oldSwapChain;
 

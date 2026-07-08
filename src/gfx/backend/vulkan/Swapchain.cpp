@@ -49,24 +49,6 @@ namespace gfx::vk
         createFramebuffers();
         createSyncObjects();
 
-        VkCommandBuffer cmdBuf = device.beginSingleTimeCommands();
-        for(int i = 0; i < imageCount(); i++) 
-        {
-            device.transitionImageLayout2(
-                cmdBuf,
-                swapChainImages[i],
-                VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                VK_IMAGE_ASPECT_COLOR_BIT);
-            device.transitionImageLayout2(
-                cmdBuf,
-                depthImages[i],
-                VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-                VK_IMAGE_ASPECT_DEPTH_BIT);
-        }
-        device.endSingleTimeCommands(cmdBuf);
-
         device.createDeletionQueues(MAX_FRAMES_IN_FLIGHT);
     }
 
@@ -235,6 +217,8 @@ namespace gfx::vk
         swapChainImages.resize(imageCount);
         vkGetSwapchainImagesKHR(device.device(), swapChain, &imageCount, swapChainImages.data());
 
+        swapChainImageLayouts.resize(imageCount, VK_IMAGE_LAYOUT_UNDEFINED);
+        
         swapChainImageFormat = surfaceFormat.format;
         swapChainExtent = extent;
     }
@@ -359,6 +343,8 @@ namespace gfx::vk
         depthImages.resize(imageCount());
         depthImageAllocs.resize(imageCount());
         depthImageViews.resize(imageCount());
+
+        depthImageLayouts.resize(imageCount(), VK_IMAGE_LAYOUT_UNDEFINED);
 
         for (int i = 0; i < depthImages.size(); i++) {
             VkImageCreateInfo imageInfo{};

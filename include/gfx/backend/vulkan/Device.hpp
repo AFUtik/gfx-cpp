@@ -112,14 +112,14 @@ namespace gfx::vk {
             VkImageLayout NewLayout, 
             int layerCount);
 
-        static void transitionImageLayout2(
-            VkCommandBuffer cmd, 
+        void transitionImageLayout2(
+            VkCommandBuffer cmd,
             VkImage image,
-                                
-            VkImageLayout oldLayout, 
-            VkImageLayout newLayout,
+            VkImageLayout  oldLayout,       VkImageLayout newLayout,
+            VkAccessFlags2 srcAccess,       VkAccessFlags2 dstAccess,
+            VkPipelineStageFlags2 srcStage, VkPipelineStageFlags2 dstStage,
             VkImageAspectFlags aspectMask);
-            
+ 
         void createDeletionQueues(uint64_t amount);
         DeletionQueue& getDeletionQueue() {return deletionQueues[frame_index];};
         void freeDeletionQueue(uint32_t index) {deletionQueues[index].flush();}

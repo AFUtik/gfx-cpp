@@ -5,6 +5,7 @@
 #include "gfx/backend/vulkan/Window.hpp"
 
 #include <GLFW/glfw3.h>
+#include <vulkan/vulkan_core.h>
 
 #include "pch.hpp"
 
@@ -129,15 +130,41 @@ void RendererVK::endFrame() {
 
 void RendererVK::beginRendering() 
 {
-    VkCommandBuffer commandBuffer =
-        reinterpret_cast<VkCommandBuffer>(frame.cmdBuf);
+    VkCommandBuffer commandBuffer = reinterpret_cast<VkCommandBuffer>(frame.cmdBuf);
 
     device.transitionImageLayout2(
             commandBuffer,
             swapchain->getImage(currentImageIndex),
-            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            swapchain->getImageLayout(currentImageIndex), 
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+
+            VK_ACCESS_2_NONE, 
+            VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+
+            VK_PIPELINE_STAGE_2_NONE, 
+            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+
             VK_IMAGE_ASPECT_COLOR_BIT);
+    swapchain->setImageLayout(currentImageIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    if(swapchain->getDepthImageLayout(currentImageIndex) != VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL)
+    {
+        device.transitionImageLayout2(
+                commandBuffer,
+                swapchain->getDepthImage(currentImageIndex),
+                swapchain->getDepthImageLayout(currentImageIndex),
+                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+
+                VK_ACCESS_2_NONE,
+                VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+
+                VK_PIPELINE_STAGE_2_NONE,
+                VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+
+                VK_IMAGE_ASPECT_DEPTH_BIT
+                );
+        swapchain->setDepthImageLayout(currentImageIndex, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+    }
 
     assert(isFrameStarted);
     assert(commandBuffer == getCurrentCommandBuffer());
@@ -157,7 +184,7 @@ void RendererVK::beginRendering()
     depthAttachment.imageView = swapchain->getDepthImageView(currentImageIndex);
     depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 
-    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.loadOp  = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
     depthAttachment.clearValue.depthStencil = {1.0f, 0};
@@ -181,7 +208,7 @@ void RendererVK::beginRendering()
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(swapchain->getSwapChainExtent().width);
+    viewport.width  = static_cast<float>(swapchain->getSwapChainExtent().width);
     viewport.height = static_cast<float>(swapchain->getSwapChainExtent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
@@ -203,11 +230,20 @@ void RendererVK::endRendering() {
 	vkCmdEndRendering(commandBuffer);
 
     device.transitionImageLayout2(
-            commandBuffer,
-            swapchain->getImage(currentImageIndex),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        commandBuffer,
+        swapchain->getImage(currentImageIndex),
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 
             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+
+            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+            VK_ACCESS_2_NONE,
+
+            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_PIPELINE_STAGE_2_NONE,
+
             VK_IMAGE_ASPECT_COLOR_BIT);
+
+    swapchain->setImageLayout(currentImageIndex, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 }
 
 }
