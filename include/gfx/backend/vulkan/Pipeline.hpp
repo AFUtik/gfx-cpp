@@ -5,6 +5,9 @@
 struct VkPipeline_T;
 using VkPipeline = VkPipeline_T*;
 
+struct VkPipelineLayout_T;
+using VkPipelineLayout = VkPipelineLayout_T*;
+
 namespace gfx::vk 
 {
 
@@ -16,9 +19,12 @@ struct RenderPipelineVK : public RenderPipeline
     ~RenderPipelineVK();
 
     void bind(CommandBuffer cmdBuf) override;
+    void bindGroup(CommandBuffer, Handle<BindGroup>& bindGroup) override;
 private:
     DeviceVK& device;
+
     VkPipeline graphicsPipeline;
+    VkPipelineLayout pipelineLayout;
 }; 
 
 }

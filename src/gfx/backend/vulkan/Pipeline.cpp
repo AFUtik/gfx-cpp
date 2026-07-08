@@ -4,6 +4,7 @@
 #include "gfx/backend/vulkan/PipelineLayout.hpp"
 #include "gfx/backend/vulkan/Shader.hpp"
 #include "gfx/backend/vulkan/Vertex.hpp"
+#include "gfx/backend/vulkan/BindGroup.hpp"
 
 namespace gfx::vk 
 {
@@ -184,7 +185,7 @@ RenderPipelineVK::RenderPipelineVK(DeviceVK& device, const RenderPipelineDesc& d
     pipelineInfo.pDynamicState       = &configInfo.dynamicStateInfo;
     pipelineInfo.pNext = &renderingInfo;
 
-    VkPipelineLayout pipelineLayout = reinterpret_cast<PipelineLayoutVK*>(desc.pipelineLayout.Get())->getPipelineLayout();
+    pipelineLayout = reinterpret_cast<PipelineLayoutVK*>(desc.pipelineLayout.Get())->getPipelineLayout();
 
     pipelineInfo.layout     = pipelineLayout;
     pipelineInfo.renderPass = VK_NULL_HANDLE;
@@ -207,7 +208,25 @@ RenderPipelineVK::RenderPipelineVK(DeviceVK& device, const RenderPipelineDesc& d
 void RenderPipelineVK::bind(CommandBuffer cmdBuf)
 {
     VkCommandBuffer commandBuffer = reinterpret_cast<VkCommandBuffer>(cmdBuf);
+
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+}
+
+void RenderPipelineVK::bindGroup(CommandBuffer cmdBuf, Handle<BindGroup>& bindGroup)
+{
+    VkCommandBuffer commandBuffer = reinterpret_cast<VkCommandBuffer>(cmdBuf);
+    BindGroupVK*    bindGroupVK   = reinterpret_cast<BindGroupVK*>(bindGroup.Get());
+    VkDescriptorSet set           = bindGroupVK->getDescriptorSet(); 
+
+    vkCmdBindDescriptorSets(
+        commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        pipelineLayout,
+        bindGroupVK->getSet(),
+        1,
+        &set,
+        0,
+	    nullptr);
 }
 
 RenderPipelineVK::~RenderPipelineVK()

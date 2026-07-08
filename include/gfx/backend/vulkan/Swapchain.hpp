@@ -3,8 +3,8 @@
 #include "Image.hpp"
 
 #include "gfx/SwapChain.hpp"
-#include <vulkan/vulkan.h> 
 
+#include <vulkan/vulkan.h> 
 #include "pch.hpp"
 
 struct VmaAllocation_T;
@@ -17,8 +17,8 @@ namespace gfx::vk {
     {
         static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
-        SwapChain(DeviceVK& device, VkExtent2D windowExtent, PresentMode mode);
-        SwapChain(DeviceVK& device, VkExtent2D windowExtent, PresentMode mode, std::shared_ptr<SwapChain> previous);
+        SwapChain(DeviceVK& device, const SwapchainDesc& desc, VkExtent2D windowExtent);
+        SwapChain(DeviceVK& device, const SwapchainDesc& desc, VkExtent2D windowExtent, std::shared_ptr<SwapChain> previous);
         ~SwapChain();
 
         void init();
@@ -46,6 +46,8 @@ namespace gfx::vk {
             return swapchain.swapChainDepthFormat == swapChainDepthFormat
                 && swapchain.swapChainImageFormat == swapChainImageFormat;
         }
+
+        const SwapchainDesc& getSwapchainDesc() {return swapchainDesc;}
 
         VkImageView getImageView(int index) { return swapChainImageViews[index]; }
         VkImageView getDepthImageView(int index) { return depthImageViews[index]; }
@@ -87,7 +89,7 @@ namespace gfx::vk {
 
         std::shared_ptr<SwapChain> oldSwapChain;
 
-        PresentMode presentMode;
+        SwapchainDesc swapchainDesc;
         VkExtent2D windowExtent;
 
         VkSwapchainKHR swapChain;

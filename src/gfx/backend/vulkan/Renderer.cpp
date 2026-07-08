@@ -10,15 +10,9 @@
 
 namespace gfx::vk {
 
-RendererVK::RendererVK(DeviceVK& device, WindowVK& window) : device(device), window(window) {
-	recreateSwapChain();
+RendererVK::RendererVK(DeviceVK& device, WindowVK& window, const SwapchainDesc& swapchainDesc) : device(device), window(window) {
+	recreateSwapChain(swapchainDesc);
 	createCommandBuffers();
-	descriptorPoolManager = DescriptorPoolManager::Builder(device)
-		.setMaxSets(1024)
-		.addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1024)
-		.addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1024)
-		.addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1024)
-		.build();
 }
 
 RendererVK::~RendererVK() {
@@ -45,7 +39,7 @@ void RendererVK::createCommandBuffers() {
 	}
 }
 
-void RendererVK::recreateSwapChain() {
+void RendererVK::recreateSwapChain(const SwapchainDesc& desc) {
 	auto extent = window.getExtent();
 	while (extent.width == 0 || extent.height == 0) {
 		extent = window.getExtent();
@@ -54,11 +48,11 @@ void RendererVK::recreateSwapChain() {
 	vkDeviceWaitIdle(device.device());
 	
 	if (swapchain == nullptr) {
-		swapchain = std::make_unique<SwapChain>(device, extent, PresentMode::FIFO);
+		swapchain = std::make_unique<SwapChain>(device, desc, extent);
 	}
 	else {
 		std::shared_ptr<SwapChain> oldSwapChain = std::move(swapchain);
-		swapchain = std::make_unique<SwapChain>(device, extent, PresentMode::FIFO, oldSwapChain);
+		swapchain = std::make_unique<SwapChain>(device, desc, extent, oldSwapChain);
 
 		if (!oldSwapChain->compareSwapFormats(*swapchain.get())) {
 			throw std::runtime_error("Swap chain image(or depth) format has changed");
@@ -75,12 +69,19 @@ void RendererVK::freeCommandBuffers() {
 	commandBuffers.clear();
 }
 
+void RendererVK::updateSwapchain(const SwapchainDesc& desc)
+{
+    assert(!isFrameStarted && "Can't call updateSwapchain when frame is started.");
+    recreateSwapChain(desc);
+}
+
+
 Frame& RendererVK::beginFrame() {
 	assert(!isFrameStarted && "Can't call beginFrame while already in progress");
 	auto result = swapchain->acquireNextImage(&currentImageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-		recreateSwapChain();
+		recreateSwapChain(swapchain->getSwapchainDesc());
 		return frame;
 	}
 
@@ -113,7 +114,7 @@ void RendererVK::endFrame() {
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
 		window.wasWindowResized()) {
 		window.resetWindowResizedFlag();
-		recreateSwapChain();
+		recreateSwapChain(swapchain->getSwapchainDesc());
 	}
 	else if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to present swap chain image!");

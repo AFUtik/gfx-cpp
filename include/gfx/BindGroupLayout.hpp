@@ -1,10 +1,13 @@
 #pragma once
 
+#include "gfx/IShader.hpp"
+#include "gfx/IBuffer.hpp"
+
 #include "pch.hpp"
 
 namespace gfx 
 {
-
+ 
 enum TextureSampleType {
     Float,
     Depth,
@@ -14,7 +17,7 @@ enum TextureSampleType {
 
 struct BufferTypeStruct
 {
-    uint32_t type;
+    BufferType type;
 };
 
 struct TextureTypeStruct
@@ -36,8 +39,8 @@ enum BindingTypeEnum
 struct BindGroupLayoutEntry
 {
     BindingType type;
-    uint32_t binding     = 0;
-    uint32_t visibility;
+    ShaderStage visibility;
+    uint32_t    binding = 0;
     
     // For GLSL shader
     std::string uniformName = ""; 
@@ -46,6 +49,7 @@ struct BindGroupLayoutEntry
 struct BindGroupLayoutDesc
 {
     std::vector<BindGroupLayoutEntry> entries;
+    uint32_t set =0;
 
     inline BindGroupLayoutDesc& add(const BindGroupLayoutEntry& entry)
     {

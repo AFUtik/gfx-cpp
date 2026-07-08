@@ -132,8 +132,8 @@ struct BlendAttachmentState
 {
     bool           enabled   = true;
 
-    BlendFactor    srcColor  = BlendFactor::One;
-    BlendFactor    dstColor  = BlendFactor::Zero;
+    BlendFactor    srcColor  = BlendFactor::SrcAlpha;
+    BlendFactor    dstColor  = BlendFactor::OneMinusSrcAlpha;
     BlendOp        colorOp   = BlendOp::Add;
 
     BlendFactor    srcAlpha  = BlendFactor::One;

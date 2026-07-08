@@ -3,24 +3,23 @@
 #include "gfx/SwapChain.hpp"
 #include "gfx/Frame.hpp"
 
-#include "pch.hpp"
 #include <vulkan/vulkan_core.h>
 
 namespace gfx::vk 
 {
-    SwapChain::SwapChain(DeviceVK& device, VkExtent2D extent, PresentMode mode) : 
+    SwapChain::SwapChain(DeviceVK& device, const SwapchainDesc& desc, VkExtent2D extent) : 
         device(device), 
         windowExtent{ extent },
-        presentMode{ mode }
+        swapchainDesc{ desc }
     {
         init();
     }
 
-    SwapChain::SwapChain(DeviceVK& device, VkExtent2D windowExtent, PresentMode mode, std::shared_ptr<SwapChain> previous) : 
+    SwapChain::SwapChain(DeviceVK& device, const SwapchainDesc& desc, VkExtent2D windowExtent, std::shared_ptr<SwapChain> previous) : 
         device(device),
         windowExtent{ windowExtent }, 
         oldSwapChain{ previous },
-        presentMode{ mode }
+        swapchainDesc{ desc }
     {
         init();
         oldSwapChain.reset();
@@ -454,17 +453,17 @@ namespace gfx::vk
     VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) 
     {
         for (const auto &availablePresentMode : availablePresentModes) {
-          if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR && presentMode == PresentMode::FIFO) 
+          if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR && swapchainDesc.mode == PresentMode::FIFO) 
           {
             std::cout << "Present mode: FIFO" << std::endl;
             return availablePresentMode;
           }
-          else if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR && presentMode == PresentMode::Immediate) 
+          else if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR && swapchainDesc.mode == PresentMode::Immediate) 
           {
             std::cout << "Present mode: IMMEDIATE" << std::endl;
             return availablePresentMode;
           }
-          else if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR && presentMode == PresentMode::Mailbox) 
+          else if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR && swapchainDesc.mode == PresentMode::Mailbox) 
           {
             std::cout << "Present mode: IMMEDIATE" << std::endl;
             return availablePresentMode;

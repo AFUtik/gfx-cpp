@@ -41,8 +41,8 @@ SamplerVK::SamplerVK(DeviceVK& device, const SamplerDesc& desc) : device(device)
 {
     VkFilter MinFilter;
     VkFilter MaxFilter;
-    MinFilter = VK_FILTER_NEAREST;
-    MaxFilter = VK_FILTER_NEAREST;
+    MinFilter = vk_convert::ToVK(desc.filter);
+    MaxFilter = vk_convert::ToVK(desc.filter);
     VkSamplerAddressMode AddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     createTextureSampler(sampler, MinFilter, MaxFilter, AddressMode);
 }
@@ -130,6 +130,11 @@ void ImageVK::write(const uint8_t* pixels)
 	updateTextureImage(LayerCount, pixels);
 }
 
+void ImageVK::setSampler(Handle<Sampler>& sampler)
+{
+    this->sampler = sampler.Cast<SamplerVK>();
+}
+
 void ImageVK::createImage()
 {
 	/*VkImageFormatProperties imageFormatProperties;
@@ -180,9 +185,13 @@ void ImageVK::updateTextureImage(int layerCount, const void* pPixels)
 	stagingBuffer.write(pPixels, imageSize);
 	stagingBuffer.unmap();
 
-	device.transitionImageLayout(image, format, imageLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layerCount);
+    VkCommandBuffer cmd = device.beginSingleTimeCommands();
+
+    device.transitionImageLayout(image, format, imageLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layerCount);
 	device.copyBufferToImage(stagingBuffer.getBuffer(), image, imageWidth, imageHeight, layerCount);
-	device.transitionImageLayout(image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, layerCount);
+    device.transitionImageLayout(image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, layerCount);
+
+    device.endSingleTimeCommands(cmd);
 
 	imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }

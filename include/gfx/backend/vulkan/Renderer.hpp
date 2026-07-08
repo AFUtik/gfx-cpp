@@ -10,6 +10,11 @@ using VkRenderPass = VkRenderPass_T*;
 struct VkCommandBuffer_T;
 using VkCommandBuffer = VkCommandBuffer_T*;
 
+namespace gfx 
+{
+    struct SwapchainDesc;
+}
+
 namespace gfx::vk {
 	class SwapChain;
 	class DescriptorPoolManager;
@@ -19,7 +24,10 @@ namespace gfx::vk {
 
 	class RendererVK : public Renderer {
 	public:
-		RendererVK(DeviceVK& device, WindowVK& window);
+		RendererVK(
+                DeviceVK& device, 
+                WindowVK& window,
+                const SwapchainDesc& desc);
 		~RendererVK();
 
 		RendererVK(const RendererVK&) = delete;
@@ -28,7 +36,6 @@ namespace gfx::vk {
 		VkRenderPass getSwapChainRenderPass();
 		bool isFrameInProgress() const { return isFrameStarted; }
 
-		DescriptorPoolManager* getDescriptorPool() { return descriptorPoolManager.get(); }
 		SwapChain* getSwapChain() {return swapchain.get();}
 
 		VkCommandBuffer getCurrentCommandBuffer() const { 
@@ -41,6 +48,8 @@ namespace gfx::vk {
 			return currentFrameIndex; 
 		}
 
+        void updateSwapchain(const SwapchainDesc& desc);
+
 		Frame& beginFrame() override;
 		void   endFrame()   override;
 
@@ -48,7 +57,7 @@ namespace gfx::vk {
 		void endRendering();
 	private:
 		void createCommandBuffers();
-		void recreateSwapChain();
+		void recreateSwapChain(const SwapchainDesc& desc);
 		void freeCommandBuffers();
 
 		DeviceVK& device;
@@ -59,8 +68,6 @@ namespace gfx::vk {
 		std::unique_ptr<SwapChain> swapchain;
 
 		std::vector<VkCommandBuffer> commandBuffers;
-
-		std::unique_ptr<DescriptorPoolManager> descriptorPoolManager;
 
 		uint32_t currentImageIndex;
 		int currentFrameIndex = 0;

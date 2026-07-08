@@ -561,7 +561,8 @@ namespace gfx::vk {
     }
 
     void DeviceVK::copyBufferToImage(
-        VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount) {
+        VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount) 
+    {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
         VkBufferImageCopy region{};
@@ -607,41 +608,18 @@ namespace gfx::vk {
         {
             throw std::runtime_error("failed to create image with VMA!");
         }
-
-
-        // For non vma allocation //
-        
-        //if (vkCreateImage(device_, &imageInfo, nullptr, &image) != VK_SUCCESS) {
-        //    throw std::runtime_error("failed to create image!");
-        //}
-
-        //VkMemoryRequirements memRequirements;
-        //vkGetImageMemoryRequirements(device_, image, &memRequirements);
-
-        //VkMemoryAllocateInfo allocInfo{};
-        //allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        //allocInfo.allocationSize = memRequirements.size;
-        //allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
-
-        //if (vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-        //    throw std::runtime_error("failed to allocate image memory!");
-        //}
-
-        //if (vkBindImageMemory(device_, image, imageMemory, 0) != VK_SUCCESS) {
-        //    throw std::runtime_error("failed to bind image memory!");
-        //}
     }
 
     // Copied from the "3D Graphics Rendering Cookbook"
-    void DeviceVK::imageMemBarrier(
+    void DeviceVK::transitionImageLayout(
         VkImage image,
         VkFormat format,
 
-        VkCommandBuffer CmdBuf, 
         VkImageLayout OldLayout, 
         VkImageLayout NewLayout, 
         int layerCount)
     {
+
         VkImageMemoryBarrier Barrier = {
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
             .pNext = NULL,
@@ -785,22 +763,9 @@ namespace gfx::vk {
             exit(1);
         }
 
-        vkCmdPipelineBarrier(CmdBuf, sourceStage, destinationStage, 
-                            0, 0, NULL, 0, NULL, 1, &Barrier);
-    }
-
-    void DeviceVK::transitionImageLayout(
-        VkImage image,
-        VkFormat format,
-        VkImageLayout oldLayout, 
-        VkImageLayout newLayout, 
-        int layerCount)
-    {
-        VkCommandBuffer m_copyCmdBuf = beginSingleTimeCommands();
-
-        imageMemBarrier(image, format, m_copyCmdBuf, oldLayout, newLayout, layerCount);
-
-        endSingleTimeCommands(m_copyCmdBuf);
+        VkCommandBuffer cmd = beginSingleTimeCommands();
+        vkCmdPipelineBarrier(cmd, sourceStage, destinationStage, 0, 0, NULL, 0, NULL, 1, &Barrier);
+        endSingleTimeCommands(cmd);
     }
 
     void DeviceVK::transitionImageLayout2(

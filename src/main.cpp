@@ -1,8 +1,12 @@
 #include "gfx/Backend.hpp"
+#include "gfx/BindGroup.hpp"
+#include "gfx/BindGroupLayout.hpp"
 #include "gfx/IBuffer.hpp"
+#include "gfx/IImage.hpp"
 #include "gfx/IMesh.hpp"
 #include "gfx/IShader.hpp"
 #include "gfx/PipelineLayout.hpp"
+#include "gfx/SwapChain.hpp"
 #include "gfx/Vertex.hpp"
 #include "gfx/PipelineState.hpp"
 #include "gfx/RenderPipeline.hpp"
@@ -50,6 +54,10 @@ int main() {
     windowInstance.setTitle("Circuit Craft 1.0.0");
 
     auto device = gfx::createVulkanBackend(&windowInstance);
+    device->updateSwapchain(gfx::SwapchainDesc{
+                .mode = gfx::PresentMode::Immediate
+            });
+
     gfx::vk::BackendVK* vk = reinterpret_cast<gfx::vk::BackendVK*>(device.get());
     
     std::vector<char> vertShaderSpirv = readFile(resPath+"shaders/vk/shader.vert.spv");
@@ -69,10 +77,23 @@ int main() {
                 .spirv_size = fragShaderSpirv.size(),
                 .glsl       = "",
                 .stage      = gfx::ShaderStage::Fragment
-            });  
+            }); 
+
+
+    gfx::Handle<gfx::BindGroupLayout> bindGroupLayout = device->createBindGroupLayout(gfx::BindGroupLayoutDesc{
+                .entries = {
+                    gfx::BindGroupLayoutEntry{
+                        .type = gfx::TextureTypeStruct{.sample_type = gfx::TextureSampleType::Float},
+                        .visibility = gfx::ShaderStage::Fragment, 
+                        .binding = 0,
+                        .uniformName = ""
+                    }
+                },
+                .set = 0
+            });
 
     gfx::Handle<gfx::PipelineLayout> pipelineLayout = device->createPipelineLayout(gfx::PipelineLayoutDesc{
-                .layouts = {}
+                .layouts = {bindGroupLayout}
             });
 
     gfx::RenderPipelineDesc pipelineDesc {
@@ -92,7 +113,6 @@ int main() {
     Events::init(&windowInstance);
     // BindGroup
         // Image loading
-    stbi_set_flip_vertically_on_load(true);
     Texture texture;
     texture.pixels.reset(
         stbi_load(
@@ -103,12 +123,29 @@ int main() {
             4
         )
     );
+    
+    gfx::Handle<gfx::Sampler> sampler = device->createSampler(gfx::SamplerDesc{
+                .filter = gfx::ImageFilter::NEAREST
+            });
+
+    gfx::Handle<gfx::Image> image = device->createImage(gfx::ImageDesc{
+                .width  = (uint32_t)texture.width,
+                .height = (uint32_t)texture.height,
+                .format = gfx::ImageFormat::RGBA8_SRGB
+            });
+
+    image->write(texture.pixels.get());
+    image->setSampler(sampler);
+
+    gfx::Handle<gfx::BindGroup> bindGroup = device->createBindGroup(bindGroupLayout);
+    bindGroup->setImage(0, image);
+    bindGroup->write();
 
     std::vector<gfx::Vertex> vertices = {
-        gfx::Vertex{{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
-        gfx::Vertex{{ 0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
-        gfx::Vertex{{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
-        gfx::Vertex{{-0.5f,  0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+        gfx::Vertex{{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
+        gfx::Vertex{{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+        gfx::Vertex{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+        gfx::Vertex{{-0.5f,  0.5f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
     };
 
     std::vector<uint32_t> indices = {
@@ -134,6 +171,8 @@ int main() {
         vk->renderer.beginRendering();
 
         pipeline->bind(frame.cmdBuf);
+        pipeline->bindGroup(frame.cmdBuf, bindGroup);
+
         mesh->draw(frame.cmdBuf);
 
         vk->renderer.endRendering();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gfx/IImage.hpp"
+
 #include <vulkan/vulkan.h>
 
 struct VmaAllocation_T;
@@ -23,6 +24,8 @@ namespace gfx::vk {
                 VkSamplerAddressMode AddressMode);
 
         VkSampler sampler;
+
+        friend struct ImageVK; 
     };
 
     struct ImageVK : public Image 
@@ -40,15 +43,20 @@ namespace gfx::vk {
 
             ImageVK(ImageVK&& other) = default;
 
-            VkImageView getView() {return view;}
+            VkImageView   getView() {return view;}
+            VkImageLayout getImageLayout() {return imageLayout;}
+            VkSampler     getSampler()     
+            {
+                assert(sampler);
+                return sampler->sampler;
+            }
 #ifndef NDEBUG
             void addDebugInfo(const char* info);
 #endif
-            void write(const uint8_t* pixels) override;
-            void bind() override {};
+            void write(const uint8_t* pixels)         override;
+            void setSampler(Handle<Sampler>& sampler) override;
         private:
             DeviceVK& device;
-
 
             void updateTextureImage(int layerCount, const void* pPixels);
             void createImageView(VkImageAspectFlags AspectFlags);
@@ -65,7 +73,7 @@ namespace gfx::vk {
             uint32_t imageWidth = 0, imageHeight = 0;
             VkFormat format;
 
-            friend struct DeviceVK;
+            Handle<SamplerVK> sampler; 
     };
 
 }

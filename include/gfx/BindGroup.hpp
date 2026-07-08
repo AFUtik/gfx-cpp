@@ -7,6 +7,12 @@ namespace gfx
 {
 
 struct BindGroupLayout;
+struct Buffer;
+struct Image;
+struct Sampler;
+
+struct CommandBuffer_T;
+using CommandBuffer = CommandBuffer_T*;
 
 struct BindGroupEntry
 {
@@ -14,10 +20,14 @@ struct BindGroupEntry
     Handle<unknown_type> resource = {};
 };
 
-struct BindGroup 
+struct BindGroup
 {
     Handle<BindGroupLayout>     layout;
     std::vector<BindGroupEntry> entries;
+
+    virtual void setBuffer(uint32_t binding, Handle<Buffer>& buffer) = 0;
+    virtual void setImage (uint32_t binding, Handle<Image>& image) = 0;
+    virtual void write() = 0;
 };
 
 }

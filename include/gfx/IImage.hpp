@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gfx/Handle.hpp"
+
 #include "pch.hpp"
 
 namespace gfx 
@@ -72,6 +74,14 @@ enum class ImageFormat
     Undefined
 };
 
+enum ImageFilter
+{
+    LINEAR,
+    NEAREST,
+    LINEAR_MIPMAP,
+    NEAREST_MIPMAP
+};
+
 enum class ImageUsage : uint32_t
 {
     ColorAttachment = 1 << 0,
@@ -81,30 +91,6 @@ enum class ImageUsage : uint32_t
     TransferDst     = 1 << 4,
 };
 
-enum ImageFilter
-{
-    LINEAR,
-    NEAREST,
-    LINEAR_MIPMAP,
-    NEAREST_MIPMAP
-};
-
-struct Image
-{
-    virtual void bind() = 0;
-
-    virtual void write(const uint8_t* data) = 0;
-    virtual void setImageFilter(ImageFilter filter) {};
-
-    virtual ~Image() = default;
-};
-
-struct ImageDesc
-{
-    uint32_t    width    = 0;
-    uint32_t    height   = 0; 
-    ImageFormat format;
-};
 
 struct SamplerDesc
 {
@@ -114,6 +100,21 @@ struct SamplerDesc
 struct Sampler 
 {
 
+};
+
+struct Image
+{
+    virtual void write(const uint8_t* data) = 0;
+    virtual void setSampler(Handle<Sampler>& sampler) = 0;
+
+    virtual ~Image() = default;
+};
+
+struct ImageDesc
+{
+    uint32_t    width    = 0;
+    uint32_t    height   = 0; 
+    ImageFormat format;
 };
 
 }

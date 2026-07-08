@@ -92,7 +92,9 @@ namespace gfx::vk {
 
         VkCommandBuffer beginSingleTimeCommands();
         void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
         void copyBufferToImage(
             VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount);
 
@@ -102,22 +104,15 @@ namespace gfx::vk {
             VkImage& image,
             VmaAllocation& allocation);
 
-        void imageMemBarrier(
+        void transitionImageLayout(
             VkImage image,
+
             VkFormat format,
-            VkCommandBuffer CmdBuf,
             VkImageLayout OldLayout, 
             VkImageLayout NewLayout, 
             int layerCount);
-            
-        void transitionImageLayout(
-            VkImage image,
-            VkFormat format,
-            VkImageLayout OldLayout, 
-            VkImageLayout NewLayout, 
-            int LayerCount);
 
-        void transitionImageLayout2(
+        static void transitionImageLayout2(
             VkCommandBuffer cmd, 
             VkImage image,
                                 

@@ -19,6 +19,9 @@ public:
         VkMemoryPropertyFlags memoryPropertyFlags,
         VmaMemoryUsage memoryUsage,
         VkDeviceSize minOffsetAlignment = 1);
+
+    BufferVK(DeviceVK& device, const BufferDesc& desc) : device(device) {};
+
     ~BufferVK();
 
     BufferVK(const BufferVK&) = delete;

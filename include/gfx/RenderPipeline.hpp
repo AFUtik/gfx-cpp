@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Handle.hpp"
 #include "PipelineState.hpp"
 #include "gfx/Vertex.hpp"
 
@@ -8,6 +9,7 @@ namespace gfx
 
 struct ColorTarget;
 struct PipelineLayout;
+struct BindGroup;
 
 struct CommandBuffer_T;
 using CommandBuffer = CommandBuffer_T*; 
@@ -37,6 +39,7 @@ struct RenderPipeline
     RenderPipelineDesc descriptor;
 
     virtual void bind(CommandBuffer) = 0;
+    virtual void bindGroup(CommandBuffer, Handle<BindGroup>&) = 0;
 };
 
 }

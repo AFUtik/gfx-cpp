@@ -111,6 +111,17 @@ inline VkFormat ToVk(ImageFormat f)
     }
 }
 
+inline VkFilter ToVK(ImageFilter f)
+{
+    switch (f)
+    {
+        case ImageFilter::NEAREST: return VK_FILTER_NEAREST;
+        case ImageFilter::LINEAR:  return VK_FILTER_LINEAR;
+        defualt: {}
+    }
+    return VK_FILTER_LINEAR;
+}
+
 inline VkShaderStageFlagBits ToVk(ShaderStage s)
 {
     switch (s)
