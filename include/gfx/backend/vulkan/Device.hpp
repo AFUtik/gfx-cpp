@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vulkan/vulkan_core.h>
 #define VMA_DEBUG_INITIALIZE_ALLOCATIONS 1
 #define VMA_STATS_STRING_ENABLED 1
 #include <vk_mem_alloc.h>
@@ -115,11 +116,12 @@ namespace gfx::vk {
         void transitionImageLayout2(
             VkCommandBuffer cmd,
             VkImage image,
+
             VkImageLayout  oldLayout,       VkImageLayout newLayout,
             VkAccessFlags2 srcAccess,       VkAccessFlags2 dstAccess,
             VkPipelineStageFlags2 srcStage, VkPipelineStageFlags2 dstStage,
             VkImageAspectFlags aspectMask);
- 
+
         void createDeletionQueues(uint64_t amount);
         DeletionQueue& getDeletionQueue() {return deletionQueues[frame_index];};
         void freeDeletionQueue(uint32_t index) {deletionQueues[index].flush();}
